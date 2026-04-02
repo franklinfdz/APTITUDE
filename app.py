@@ -1,7 +1,7 @@
 import os
 import random
 import re
-import psycopg2
+import psycopg
 from flask import Flask, render_template, request, session, jsonify
 
 # =========================================================
