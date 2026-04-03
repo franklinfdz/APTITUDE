@@ -2,38 +2,117 @@
 <html>
 <head>
   <link rel="stylesheet" href="/static/style.css">
+
+  <style>
+    .result-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .score-box {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #00ffff;
+    }
+
+    .performance-tag {
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+
+    .reward-box {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      background: rgba(0,255,255,0.08);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0,255,255,0.2);
+      text-align: center;
+    }
+
+    .wrong {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(255,0,0,0.08);
+    }
+
+    .explanation-container {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .exp-btn {
+      margin-top: 10px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 
 <body>
 <div class="container">
 
-  <!-- RESULT CONTENT -->
-<div id="resultContent">
-    <h1>🎯 Score: {{ score }}/{{ total }}</h1>
+  <!-- 🔥 RESULT HEADER -->
+  <div class="result-header">
+    <div class="score-box">
+      Score: {{ score }} / {{ total }}
+    </div>
+
+    <div class="performance-tag">
+      {% if score == total %}
+        Exceptional Performance
+      {% elif score >= total * 0.7 %}
+        Strong Performance
+      {% elif score >= total * 0.4 %}
+        Moderate Performance
+      {% else %}
+        Needs Improvement
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 🔥 XP / REWARD -->
+  <div class="reward-box">
+    <p>XP Gained: {{ xp_gained }}</p>
+    <p>Total XP: {{ total_xp }}</p>
+    <p>Rank: {{ rank }}</p>
+  </div>
+
+  <!-- 🔥 MISTAKES -->
+  <div id="resultContent">
 
     {% if wrong|length == 0 %}
-      <h2>🔥 Perfect Score! Well Done</h2>
+      <h2 style="text-align:center; margin-top:20px;">
+        All Answers Correct. Maintain This Standard.
+      </h2>
     {% else %}
-      <h2>📚 Learn From Mistakes</h2>
+      <h2 style="margin-top:20px;">Review Incorrect Responses</h2>
 
       {% for w in wrong %}
       <div class="wrong">
         <p><b>{{ w.q }}</b></p>
-        <p>Correct: {{ w.correct }}</p>
+        <p>Correct Answer: {{ w.correct }}</p>
 
-        <!-- Explanation Container -->
-        <div id="exp{{ loop.index }}"></div>
+        <div class="explanation-container" id="exp{{ loop.index }}"></div>
       </div>
       {% endfor %}
-
     {% endif %}
+
   </div>
 
-  <!-- TRY AGAIN -->
-  <div class="center-buttons">
-    <form action="/">
-      <button type="submit">Try Again</button>
+  <!-- 🔥 ACTION BUTTONS -->
+  <div class="center-buttons" style="margin-top:25px;">
+    <form action="/quiz" method="post" style="display:inline;">
+      <button type="submit">Attempt Again</button>
     </form>
+
+    <a href="/dashboard">
+      <button>View Dashboard</button>
+    </a>
   </div>
 
 </div>
@@ -41,35 +120,37 @@
 <!-- BACKGROUND -->
 <div class="bg-shape shape1"></div>
 <div class="bg-shape shape2"></div>
+<div class="cursor-glow"></div>
+<canvas id="particles"></canvas>
 
-<!-- 🔥 Explanation Logic -->
+<!-- 🔥 CLEAN EXPLANATION FLOW -->
 <script>
 function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
     if (level === 1) {
         el.innerHTML = `
-            <b>🧠 Level 1:</b> ${explanations.level1}
-            <br><br>
-            <button onclick='showExplanation(2, "${id}", ${JSON.stringify(explanations)})'>
-                Explain Again 🔍
+            <b>Level 1 Insight:</b><br>${explanations.level1}
+            <br>
+            <button class="exp-btn" onclick='showExplanation(2, "${id}", ${JSON.stringify(explanations)})'>
+                View Detailed Steps
             </button>
         `;
     }
 
     else if (level === 2) {
         el.innerHTML = `
-            <b>🧠 Level 2:</b> ${explanations.level2}
-            <br><br>
-            <button onclick='showExplanation(3, "${id}", ${JSON.stringify(explanations)})'>
-                Explain Thoroughly
+            <b>Step By Step:</b><br>${explanations.level2}
+            <br>
+            <button class="exp-btn" onclick='showExplanation(3, "${id}", ${JSON.stringify(explanations)})'>
+                View Concept
             </button>
         `;
     }
 
     else if (level === 3) {
         el.innerHTML = `
-            <b>🧠 Level 3:</b> ${explanations.level3}
+            <b>Conceptual Understanding:</b><br>${explanations.level3}
         `;
     }
 }
@@ -84,6 +165,54 @@ function showExplanation(level, id, explanations) {
         {{ w.exp | tojson | safe }}
     );
 {% endfor %}
+</script>
+
+<!-- BACKGROUND SYSTEM -->
+<script>
+document.addEventListener("mousemove", (e) => {
+  const glow = document.querySelector(".cursor-glow");
+  glow.style.left = e.clientX + "px";
+  glow.style.top = e.clientY + "px";
+});
+
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 3 + 1,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5
+  });
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach(p => {
+    p.x += p.dx;
+    p.y += p.dy;
+
+    if (p.x > canvas.width) p.x = 0;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.y > canvas.height) p.y = 0;
+    if (p.y < 0) p.y = canvas.height;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,255,255,0.5)";
+    ctx.fill();
+  });
+
+  requestAnimationFrame(animate);
+}
+
+animate();
 </script>
 
 </body>
