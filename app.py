@@ -16,6 +16,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 def generate_explanations(question, answer, qtype):
     try:
         qtype = (qtype or "").lower().strip()
+        q_lower = question.lower()
 
         if qtype in ["quant", "di"]:
             return solve_quant(question, answer)
@@ -26,14 +27,14 @@ def generate_explanations(question, answer, qtype):
         elif qtype == "verbal":
             return solve_verbal(question, answer)
 
-        # 🔥 FALLBACK SMART ROUTING BASED ON QUESTION CONTENT
-        if any(word in question.lower() for word in ["%", "of", "sum", "+", "-", "×", "x", "÷", "average"]):
+        # 🔥 SMART FALLBACK (STRICTER)
+        if any(sym in question for sym in ["%", "+", "-", "×", "÷"]):
             return solve_quant(question, answer)
 
-        if any(word in question.lower() for word in ["next", "missing", "series", "odd"]):
+        if re.search(r'\d+', question) and any(word in q_lower for word in ["series", "next", "missing"]):
             return solve_logic(question, answer)
 
-        if any(word in question.lower() for word in ["synonym", "antonym", "fill", "spelling", "plural"]):
+        if any(word in q_lower for word in ["synonym", "antonym", "fill", "spelling"]):
             return solve_verbal(question, answer)
 
         return default_explanation(question, answer)
@@ -42,81 +43,75 @@ def generate_explanations(question, answer, qtype):
         print("EXPLANATION ERROR:", e)
         return default_explanation(question, answer)
 
+# =========================================================
+# 🧩 LEVEL BUILDER (UPGRADED)
+# =========================================================
 def build_levels(steps, answer, question=""):
 
-    # 🔹 LEVEL 1 (QUICK)
-    level1 = f"👉 Idea: {steps[0]}\n✅ Answer: {answer}"
+    # LEVEL 1 — QUICK INSIGHT
+    level1 = f"Idea: {steps[0]}\nFinal Answer: {answer}"
 
-    # 🔹 LEVEL 2 (HOW TO SOLVE)
-    level2_lines = ["🧠 How To Solve:"]
+    # LEVEL 2 — STRUCTURED SOLUTION
+    level2_lines = ["Step-By-Step Solution:"]
 
     for i, s in enumerate(steps):
-        level2_lines.append(f"Step {i+1}: {s}")
+        level2_lines.append(f"{i+1}. {s}")
 
-    level2_lines.append(f"\n🎯 Final Answer: {answer}")
+    level2_lines.append(f"\nConclusion: {answer}")
     level2 = "\n\n".join(level2_lines)
 
-    # 🔹 LEVEL 3 (STORY MODE)
+    # LEVEL 3 — CONCEPTUAL UNDERSTANDING (NO CHILDISH TONE)
     q = question.lower()
-    story = []
 
     if "%" in q:
-        story = [
-            "👶 Imagine You Have 100 Chocolates.",
-            "👉 Percentage Means Taking Some From 100.",
-            f"👉 So We Take The Required Part And Get {answer}.",
-            f"🎉 Final Answer: {answer}"
+        explanation = [
+            "Concept:",
+            "Percentage Represents A Fraction Out Of 100.",
+            "To Solve, Convert The Percentage Into A Fraction And Multiply By The Given Value.",
+            f"Result After Calculation: {answer}"
         ]
 
     elif "divide" in q or "÷" in q:
-        story = [
-            "👶 Imagine Sharing Chocolates With Friends.",
-            "👉 Division Means Everyone Gets Equal Pieces.",
-            f"👉 After Sharing, Each Gets {answer}.",
-            f"🎉 Final Answer: {answer}"
+        explanation = [
+            "Concept:",
+            "Division Represents Equal Distribution.",
+            "The Total Quantity Is Split Into Equal Parts.",
+            f"Each Part Evaluates To: {answer}"
         ]
 
     elif "multiply" in q or "×" in q or "x" in q:
-        story = [
-            "👶 Imagine You Have Same Number Of Chocolates In Many Boxes.",
-            "👉 Multiplication Means Adding Same Thing Again And Again.",
-            f"👉 Total Chocolates Become {answer}.",
-            f"🎉 Final Answer: {answer}"
-        ]
-
-    elif "square" in q:
-        story = [
-            "👶 Square Means A Box Shape.",
-            "👉 Same Number Multiplied By Itself.",
-            f"👉 So The Total Becomes {answer}.",
-            f"🎉 Final Answer: {answer}"
+        explanation = [
+            "Concept:",
+            "Multiplication Is Repeated Addition Of Equal Values.",
+            "It Scales A Number Based On Frequency.",
+            f"Computed Result: {answer}"
         ]
 
     elif "average" in q:
-        story = [
-            "👶 Imagine Sharing Total Chocolates Equally.",
-            "👉 Add Everything Then Divide Equally.",
-            f"👉 Everyone Gets {answer}.",
-            f"🎉 Final Answer: {answer}"
+        explanation = [
+            "Concept:",
+            "Average Represents Equal Distribution Of Total Values.",
+            "Sum All Values And Divide By Count.",
+            f"Balanced Value Obtained: {answer}"
         ]
 
-    elif "odd" in q or "different" in q:
-        story = [
-            "👶 Imagine A Group Of Similar Things.",
-            "👉 One Item Does Not Belong.",
-            f"👉 That Different One Is {answer}.",
-            f"🎉 Final Answer: {answer}"
+    elif "series" in q or "next" in q:
+        explanation = [
+            "Concept:",
+            "Identify The Underlying Pattern In The Sequence.",
+            "It May Be Based On Difference, Ratio, Or Position-Based Rules.",
+            f"Following The Pattern Leads To: {answer}"
         ]
 
     else:
-        story = [
-            "👶 Think Of This Like A Simple Situation.",
-            "👉 Follow The Pattern Or Rule.",
-            f"👉 That Leads To {answer}.",
-            f"🎉 Final Answer: {answer}"
+        explanation = [
+            "Concept:",
+            "Break The Problem Into Smaller Logical Steps.",
+            "Apply Relevant Rules Or Eliminate Incorrect Options.",
+            f"Final Outcome: {answer}"
         ]
 
-    level3 = "\n\n".join(story)
+    level3 = "\n\n".join(explanation)
 
     return {
         "level1": level1,
@@ -124,57 +119,52 @@ def build_levels(steps, answer, question=""):
         "level3": level3
     }
 
-# =========================
+# =========================================================
 # 🔢 QUANT
-# =========================
+# =========================================================
 def solve_quant(question, answer):
     steps = []
     numbers = list(map(int, re.findall(r'\d+', question)))
+    q = question.lower()
 
     if "%" in question:
-        if "of" in question:
+        if "of" in q and len(numbers) >= 2:
             percent, total = numbers[0], numbers[1]
-            steps.append(f"{percent}% Means {percent}/100")
+            steps.append(f"Convert {percent}% To Fraction ({percent}/100)")
             steps.append(f"Multiply With {total}")
-        elif "increase" in question.lower():
-            steps.append("Find Increase Then Convert To %")
-        elif "profit" in question.lower() or "loss" in question.lower():
-            steps.append("Use Profit/Loss % Formula")
+        else:
+            steps.append("Apply Percentage Formula")
 
     elif "+" in question:
-        steps.append(f"Add Numbers {numbers}")
+        steps.append(f"Add Values {numbers}")
 
     elif "-" in question:
-        steps.append(f"Subtract Numbers {numbers}")
+        steps.append(f"Subtract Values {numbers}")
 
-    elif "×" in question or "x" in question.lower():
+    elif "×" in question or re.search(r'\b\d+\s*x\s*\d+\b', q):
         steps.append(f"Multiply {numbers[0]} And {numbers[1]}")
 
-    elif "÷" in question or "divided" in question.lower():
+    elif "÷" in question or "divided" in q:
         steps.append(f"Divide {numbers[0]} By {numbers[1]}")
 
-    elif "square" in question.lower():
+    elif "square" in q:
         steps.append("Multiply Number By Itself")
 
-    elif "cube" in question.lower():
-        steps.append("Multiply Number 3 Times")
+    elif "cube" in q:
+        steps.append("Multiply Number Three Times")
 
-    elif "average" in question.lower():
-        steps.append("Add All Numbers And Divide By Count")
-
-    elif "ratio" in question.lower():
-        steps.append("Use Ratio Distribution Logic")
+    elif "average" in q:
+        steps.append("Add All Values And Divide By Count")
 
     else:
-        steps.append("Break Problem Into Small Steps")
+        steps.append("Break Down The Problem Systematically")
 
-    steps.append(f"Answer Comes Out As {answer}")
+    steps.append(f"Final Result = {answer}")
     return build_levels(steps, answer, question)
 
-
-# =========================
+# =========================================================
 # 🧩 LOGIC
-# =========================
+# =========================================================
 def solve_logic(question, answer):
     steps = []
     nums = list(map(int, re.findall(r'\d+', question)))
@@ -183,93 +173,73 @@ def solve_logic(question, answer):
         diff = nums[1] - nums[0]
 
         if all(nums[i+1] - nums[i] == diff for i in range(len(nums)-1)):
-            steps.append(f"Pattern Is +{diff}")
+            steps.append(f"Constant Difference Pattern (+{diff})")
 
         elif nums[0] != 0 and nums[1] % nums[0] == 0:
             ratio = nums[1] // nums[0]
             if all(nums[i+1] // nums[i] == ratio for i in range(len(nums)-1)):
-                steps.append(f"Pattern Is ×{ratio}")
-
-        elif all(int(n**0.5)**2 == n for n in nums):
-            steps.append("These Are Square Numbers")
+                steps.append(f"Multiplicative Pattern (×{ratio})")
 
         else:
-            steps.append("Pattern Changes Gradually (Check Differences)")
+            steps.append("Pattern Evolves — Check Differences Or Growth")
 
-    elif "odd" in question.lower() or "different" in question.lower():
-        steps.append("Find Item That Doesn’t Match Group")
+    elif "odd" in question.lower():
+        steps.append("Identify The Element That Does Not Fit")
 
     else:
-        steps.append("Look Carefully For Pattern")
+        steps.append("Analyze Pattern Carefully")
 
-    steps.append(f"Correct Answer Is {answer}")
+    steps.append(f"Correct Answer: {answer}")
     return build_levels(steps, answer, question)
 
-
-# =========================
-# 📚 VERBAL (FIXED PROPERLY)
-# =========================
+# =========================================================
+# 📚 VERBAL
+# =========================================================
 def solve_verbal(question, answer):
     steps = []
     q = question.lower()
 
-    # Grammar Fill
     if "___" in question:
-        if "he" in q or "she" in q:
-            steps.append("He/She Is Singular → Use 'Is'")
-        elif "i" in q:
-            steps.append("I Always Uses 'Am'")
-        elif "they" in q or "we" in q:
-            steps.append("They/We Are Plural → Use 'Are'")
-        steps.append("Apply Correct Grammar Rule")
+        steps.append("Apply Appropriate Grammar Rule Based On Subject")
 
-    # Synonym
     elif "synonym" in q:
-        steps.append("Find Word With Same Meaning")
-        steps.append(f"{answer} Matches Closely")
+        steps.append("Identify Word With Similar Meaning")
 
-    # Antonym
     elif "antonym" in q:
-        steps.append("Find Opposite Meaning")
-        steps.append(f"{answer} Is Opposite")
+        steps.append("Identify Opposite Meaning")
 
-    # Spelling
     elif "spelling" in q:
-        steps.append("Check Correct Letter Order")
-        steps.append(f"{answer} Is Correct Form")
+        steps.append("Check Correct Word Formation")
 
-    # Article (a/an)
-    elif "___" in question and ("apple" in q or "umbrella" in q):
-        steps.append("Use 'An' Before Vowel Sound")
-    # Default
     else:
-        steps.append("Read Sentence Naturally")
-        steps.append("Pick What Sounds Right")
+        steps.append("Interpret Context And Choose Best Fit")
 
-    steps.append(f"Final Answer Is {answer}")
+    steps.append(f"Final Answer: {answer}")
     return build_levels(steps, answer, question)
 
-    
+# =========================================================
+# 🔁 DEFAULT
+# =========================================================
 def default_explanation(question, answer):
     return {
-        "level1": f"💡 Think Simply:\nLook At The Question Carefully.",
+        "level1": "Understand The Question And Identify Key Requirement.",
 
         "level2": (
-            "Step 1: Read The Question Properly\n\n"
-            "Step 2: Identify What Is Being Asked\n\n"
-            "Step 3: Eliminate Wrong Options\n\n"
-            f"✅ Final Answer: {answer}"
+            "1. Read The Question Carefully\n\n"
+            "2. Identify What Is Being Asked\n\n"
+            "3. Eliminate Incorrect Options\n\n"
+            f"Conclusion: {answer}"
         ),
 
         "level3": (
-            "🧒 Let’s Make It Super Simple:\n\n"
-            "👉 Imagine You Are Solving This Like A Puzzle.\n"
-            "👉 You Look At Each Option One By One.\n"
-            "👉 Remove The Ones That Feel Wrong.\n"
-            "👉 The One That Fits Perfectly Is Your Answer.\n\n"
-            f"🎯 Final Answer: {answer}"
+            "Concept:\n\n"
+            "Approach The Problem Logically.\n"
+            "Break It Into Smaller Steps And Evaluate Each Option.\n\n"
+            f"Final Outcome: {answer}"
         )
     }
+
+
 # =========================================================
 # 📊 QUESTIONS
 # =========================================================
