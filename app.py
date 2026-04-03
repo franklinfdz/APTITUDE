@@ -22,23 +22,28 @@ def generate_explanations(question, answer, qtype):
         return solve_verbal(question, answer)
     return default_explanation(question, answer)
 
-
 def build_levels(steps, answer):
-    # LEVEL 1 → QUICK
-    level1 = f"👉 Key Idea: {steps[0]} → Answer = {answer}"
 
-    # LEVEL 2 → TEEN STYLE
-    level2 = "\n".join([
-        "🧠 Step-By-Step Thinking:",
-        *[f"Step {i+1}: {s}" for i, s in enumerate(steps)],
-        f"✅ Final Answer: {answer}"
+    # 🔹 LEVEL 1 (QUICK HIT)
+    level1 = f"👉 Idea: {steps[0]}\n✅ Answer: {answer}"
+
+    # 🔹 LEVEL 2 (TEEN / CLEAR LOGIC)
+    level2 = "\n\n".join([
+        "🧠 Step-By-Step Solution:",
+        *[f"➡ Step {i+1}: {s}" for i, s in enumerate(steps)],
+        f"\n🎯 Final Answer: {answer}"
     ])
 
-    # LEVEL 3 → KID STYLE
-    level3 = "\n".join([
-        "👶 Let’s Think Super Simple:",
-        *[f"👉 {s}" for s in steps],
-        f"🎯 So The Answer Is: {answer}"
+    # 🔹 LEVEL 3 (KID / SUPER SIMPLE STORY)
+    simple_lines = []
+
+    for s in steps:
+        simple_lines.append(f"👉 {s}.")
+
+    level3 = "\n\n".join([
+        "👶 Let’s Understand Like A Story:",
+        *simple_lines,
+        f"\n🎉 So The Answer Is: {answer}"
     ])
 
     return {
@@ -46,7 +51,6 @@ def build_levels(steps, answer):
         "level2": level2,
         "level3": level3
     }
-
 
 # =========================
 # 🔢 QUANT
