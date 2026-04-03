@@ -525,13 +525,14 @@ def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # USERS TABLE (NEW)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS results (
+        CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
-            username TEXT,
-            score INTEGER,
-            total INTEGER,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            username TEXT UNIQUE,
+            password TEXT,
+            total_score INTEGER DEFAULT 0,
+            total_attempts INTEGER DEFAULT 0
         )
     """)
 
@@ -544,16 +545,55 @@ try:
 except Exception as e:
     print("DB ERROR:", e)
 
+def get_rank(score):
+    if score >= 200:
+        return "Platinum"
+    elif score >= 100:
+        return "Gold"
+    elif score >= 50:
+        return "Silver"
+    else:
+        return "Bronze"
+
 # =========================================================
 # 🌐 ROUTES
 # =========================================================
-@app.route('/')
-def home():
-    return render_template("home.html")
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        user = cur.fetchone()
+
+        if user:
+            # CHECK HASHED PASSWORD
+            if check_password_hash(user[2], password):
+                session['username'] = username
+                return redirect('/dashboard')
+            else:
+                return "Invalid Credentials"
+        else:
+            # REGISTER
+            hashed_pw = generate_password_hash(password)
+
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed_pw)
+            )
+            conn.commit()
+
+            session['username'] = username
+            return redirect('/dashboard')
+
+    return render_template("login.html")
 
 @app.route('/quiz', methods=['POST'])
 def quiz():
-    session['username'] = request.form.get('username', 'Guest')
     questions = get_questions()
     session['questions'] = questions
     return render_template("quiz.html", questions=questions)
@@ -601,60 +641,66 @@ def explain():
 @app.route('/submit', methods=['POST'])
 def submit():
     questions = session.get('questions', [])
-    username = session.get('username', 'Guest')
+    username = session.get('username')
 
     score = 0
-    wrong = []
 
     for i, q in enumerate(questions):
         ans = request.form.get(f"q{i}")
-
         if ans == q["answer"]:
             score += 1
-        else:
-            wrong.append({
-                "q": q["q"],
-                "correct": q["answer"],
-                "exp": generate_explanations(q["q"], q["answer"], q["type"])
-            })
 
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        "INSERT INTO results (username, score, total) VALUES (%s, %s, %s)",
-        (username, score, len(questions))
-    )
+    cur.execute("""
+        UPDATE users
+        SET total_score = total_score + %s,
+            total_attempts = total_attempts + %s
+        WHERE username = %s
+    """, (score, len(questions), username))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return render_template("result.html", score=score, total=len(questions), wrong=wrong)
+    return render_template("result.html", score=score, total=len(questions))
 
 @app.route('/dashboard')
 def dashboard():
+    username = session.get('username')
+
+    if not username:
+        return redirect('/')
+
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT score, total FROM results ORDER BY id ASC")
-    data = cur.fetchall()
+    cur.execute("""
+        SELECT total_score, total_attempts
+        FROM users
+        WHERE username = %s
+    """, (username,))
+
+    user = cur.fetchone()
 
     cur.close()
     conn.close()
 
-    scores = [d[0] for d in data]
-    totals = [d[1] for d in data]
+    if not user:
+        return redirect('/')
 
-    attempts = len(scores)
-    avg_score = round(sum(scores)/attempts, 2) if attempts else 0
+    score, attempts = user
+    accuracy = round((score / attempts) * 100, 2) if attempts else 0
+    rank = get_rank(score)
 
     return render_template(
         "dashboard.html",
-        scores=scores,
-        totals=totals,
+        username=username,
+        score=score,
         attempts=attempts,
-        avg_score=avg_score
+        accuracy=accuracy,
+        rank=rank
     )
 
 @app.route('/leaderboard')
@@ -663,18 +709,28 @@ def leaderboard():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT username, score, total
-        FROM results
-        ORDER BY score DESC, timestamp ASC
+        SELECT username, total_score, total_attempts
+        FROM users
+        ORDER BY total_score DESC
         LIMIT 10
     """)
 
     data = cur.fetchall()
 
+    leaderboard_data = []
+    for user in data:
+        rank = get_rank(user[1])
+        leaderboard_data.append((user[0], user[1], user[2], rank))
+
     cur.close()
     conn.close()
 
-    return render_template("leaderboard.html", data=data)
+    return render_template("leaderboard.html", data=leaderboard_data)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 # =========================================================
 # ▶ RUN
