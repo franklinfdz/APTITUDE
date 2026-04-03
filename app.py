@@ -262,7 +262,6 @@ def quiz():
 
     return render_template("quiz.html", questions=questions)
 
-
 @app.route('/submit', methods=['POST'])
 def submit():
     questions = session.get('questions', [])
@@ -277,7 +276,6 @@ def submit():
 
     for i, q in enumerate(questions):
         ans = request.form.get(f"q{i}")
-
         if ans == q["answer"]:
             score += 1
             xp_earned += get_xp(q["difficulty"])
@@ -288,17 +286,17 @@ def submit():
                 "exp": generate_explanations(q["q"], q["answer"], q["type"])
             })
 
+    # ===== Get Current XP From DB =====
     conn = get_db_connection()
     cur = conn.cursor()
+    cur.execute("SELECT xp FROM users WHERE username=%s", (username,))
+    row = cur.fetchone()
+    current_xp = row[0] if row else 0
 
-    cur.execute("""
-    UPDATE users
-    SET total_score = total_score + %s,
-        total_attempts = total_attempts + %s,
-        xp = xp + %s
-    WHERE username = %s
-""", (score, len(questions), xp_earned, username))
+    # ===== Calculate New XP =====
+    new_xp = current_xp + xp_earned
 
+    # ===== Update User Stats =====
     cur.execute("""
         UPDATE users
         SET total_score = total_score + %s,
