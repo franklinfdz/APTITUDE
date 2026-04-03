@@ -1,162 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="/static/style.css">
-
-<style>
-  .leaderboard-title {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .leaderboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-
-  .leaderboard-table th,
-  .leaderboard-table td {
-    padding: 12px;
-    text-align: center;
-  }
-
-  .leaderboard-table th {
-    border-bottom: 2px solid rgba(255,255,255,0.2);
-    opacity: 0.7;
-  }
-
-  .leaderboard-table tr {
-    transition: 0.3s;
-  }
-
-  .leaderboard-table tr:hover {
-    background: rgba(0,255,255,0.1);
-  }
-
-  .rank-badge {
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-
-  .bronze { background: rgba(205,127,50,0.3); }
-  .silver { background: rgba(192,192,192,0.3); }
-  .gold { background: rgba(255,215,0,0.3); }
-  .platinum { background: rgba(0,255,255,0.3); }
-
-  .top-player {
-    font-weight: bold;
-    color: #00ffff;
-  }
-</style>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1 class="leaderboard-title">Global Leaderboard</h1>
+  <h1>🏆 Leaderboard</h1>
 
   <table class="leaderboard-table">
-    <tr>
-      <th>Rank</th>
-      <th>Player</th>
-      <th>Total Score</th>
-      <th>Attempts</th>
-      <th>Tier</th>
-    </tr>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>User</th>
+        <th>Score</th>
+        <th>Attempts</th>
+        <th>Accuracy</th>
+        <th>Tier</th>
+      </tr>
+    </thead>
 
-    {% for user in data %}
-    <tr class="{% if loop.index == 1 %}top-player{% endif %}">
-      <td>#{{ loop.index }}</td>
-      <td>{{ user[0] }}</td>
-      <td>{{ user[1] }}</td>
-      <td>{{ user[2] }}</td>
+    <tbody>
+      {% for user in data %}
+      <tr class="{% if loop.index == 1 %}top-1{% elif loop.index == 2 %}top-2{% elif loop.index == 3 %}top-3{% endif %}">
+        
+        <td>#{{ loop.index }}</td>
+        <td>{{ user[0] }}</td>
+        <td>{{ user[1] }}</td>
+        <td>{{ user[2] }}</td>
 
-      <td>
-        <span class="rank-badge 
-          {% if user[3] == 'Platinum' %}platinum
-          {% elif user[3] == 'Gold' %}gold
-          {% elif user[3] == 'Silver' %}silver
-          {% else %}bronze
+        <td>
+          {% if user[2] > 0 %}
+            {{ ((user[1] / user[2]) * 100) | round(2) }}%
+          {% else %}
+            0%
           {% endif %}
-        ">
-          {{ user[3] }}
-        </span>
-      </td>
-    </tr>
-    {% endfor %}
+        </td>
 
+        <td class="rank-badge">{{ user[3] }}</td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 
-  <div class="center-buttons" style="margin-top:25px;">
-    <a href="/dashboard">
-      <button>View Dashboard</button>
-    </a>
+  <br>
 
-    <a href="/quiz">
-      <button>Start New Test</button>
-    </a>
+  <div class="center-buttons">
+    <a href="/dashboard"><button>Dashboard</button></a>
+    <a href="/"><button>Logout</button></a>
   </div>
 
 </div>
 
-<!-- BACKGROUND -->
+<!-- BACKGROUND SYSTEM -->
 <div class="bg-shape shape1"></div>
 <div class="bg-shape shape2"></div>
 <div class="cursor-glow"></div>
 <canvas id="particles"></canvas>
-
-<script>
-/* Cursor Glow */
-document.addEventListener("mousemove", (e) => {
-  const glow = document.querySelector(".cursor-glow");
-  glow.style.left = e.clientX + "px";
-  glow.style.top = e.clientY + "px";
-});
-
-/* Particles */
-const canvas = document.getElementById("particles");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let particles = [];
-for (let i = 0; i < 80; i++) {
-  particles.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 3 + 1,
-    dx: (Math.random() - 0.5) * 0.5,
-    dy: (Math.random() - 0.5) * 0.5
-  });
-}
-
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  particles.forEach(p => {
-    p.x += p.dx;
-    p.y += p.dy;
-
-    if (p.x > canvas.width) p.x = 0;
-    if (p.x < 0) p.x = canvas.width;
-    if (p.y > canvas.height) p.y = 0;
-    if (p.y < 0) p.y = canvas.height;
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,255,255,0.5)";
-    ctx.fill();
-  });
-
-  requestAnimationFrame(animate);
-}
-
-animate();
-</script>
 
 </body>
 </html>
