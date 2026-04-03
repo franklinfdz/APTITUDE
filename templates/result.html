@@ -16,21 +16,7 @@
     {% else %}
       <h2>📚 Learn From Mistakes</h2>
 
-{% for w in wrong %}
-<div class="wrong">
-  <p><b>{{ w.q }}</b></p>
-  <p>Correct: {{ w.correct }}</p>
 
-  <!-- Explanation Container -->
-  <div id="exp{{ loop.index }}"></div>
-
-  <script>
-    const expData{{ loop.index }} = {{ w.exp | tojson | safe }};
-    showExplanation(1, "exp{{ loop.index }}", expData{{ loop.index }});
-  </script>
-
-</div>
-{% endfor %}
     {% endif %}
   </div>
 
@@ -49,14 +35,24 @@
 
 <!-- 🔥 Explanation Logic -->
 <script>
+{% for w in wrong %}
+<div class="wrong">
+  <p><b>{{ w.q }}</b></p>
+  <p>Correct: {{ w.correct }}</p>
 
-showExplanation(
-    1,
-    "exp{{ loop.index }}",
-    {{ w.exp | tojson }}
-  );
-  
-</script>
+  <!-- Explanation Container -->
+  <div id="exp{{ loop.index }}"></div>
+
+  <script>
+    showExplanation(
+      1,
+      "exp{{ loop.index }}",
+      {{ w.exp | tojson | safe }}
+    );
+  </script>
+
+</div>
+{% endfor %}
 
 </body>
 </html>
