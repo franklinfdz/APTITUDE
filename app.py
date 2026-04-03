@@ -201,6 +201,7 @@ def get_rank(xp):
 # =========================================================
 # 🌐 ROUTES
 # =========================================================
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -210,23 +211,36 @@ def login():
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Check if user exists
         cur.execute("SELECT * FROM users WHERE username=%s", (username,))
         user = cur.fetchone()
 
         if user:
+            # User exists, check password
             if check_password_hash(user[2], password):
                 session['username'] = username
-                return redirect('/dashboard')
+                cur.close()
+                conn.close()
+                return redirect('/quiz')  # Redirect directly to quiz
             else:
+                cur.close()
+                conn.close()
                 return render_template("login.html", error="Invalid Credentials")
         else:
+            # New user, create account
             hashed_pw = generate_password_hash(password)
-            cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_pw))
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed_pw)
+            )
             conn.commit()
-            session['username'] = username
-            return redirect('/quiz')
+            cur.close()
+            conn.close()
 
-    return render_template("login.html")
+            session['username'] = username
+            return redirect('/quiz')  # Redirect directly to quiz
+
+    return render_template("login.html")                
 
 @app.route('/quiz', methods=['POST'])
 def quiz():
