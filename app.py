@@ -49,21 +49,21 @@ def solve_quant(question, answer):
         steps.append(f"Result = {result}")
 
     elif "half" in question.lower() and len(numbers) >= 1:
-    result = numbers[0] / 2
-    steps.append(f"Half Of {numbers[0]} → {numbers[0]}/2")
-    steps.append(f"Result = {result}")
+        result = numbers[0] / 2
+        steps.append(f"Half Of {numbers[0]} → {numbers[0]}/2")
+        steps.append(f"Result = {result}")
 
     elif "profit" in question.lower() and "%" in question.lower():
-    if len(numbers) >= 2:
-        profit = numbers[0]
-        cost = numbers[1]
-        percent = (profit / cost) * 100
-        steps.append(f"Profit % = (Profit / Cost) × 100")
-        steps.append(f"({profit}/{cost}) × 100 = {percent}%")
+        if len(numbers) >= 2:
+            profit = numbers[0]
+            cost = numbers[1]
+            percent = (profit / cost) * 100
+            steps.append(f"Profit % = (Profit / Cost) × 100")
+            steps.append(f"({profit}/{cost}) × 100 = {percent}%")
 
     elif "interest" in question.lower():
-    steps.append("Use Interest Formula")
-    steps.append(f"Answer = {answer}")
+        steps.append("Use Interest Formula")
+        steps.append(f"Answer = {answer}")
 
     else:
         steps.append("Understand Problem")
