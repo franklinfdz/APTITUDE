@@ -202,25 +202,6 @@ def get_rank(xp):
 # 🌐 ROUTES
 # =========================================================
 
-@app.route('/quiz', methods=['GET', 'POST'])
-def quiz():
-    username = session.get('username')
-    if not username:
-        return redirect('/')
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT xp FROM users WHERE username=%s", (username,))
-    row = cur.fetchone()
-    xp = row[0] if row else 0
-    cur.close()
-    conn.close()
-
-    questions = get_questions(xp)
-    session['questions'] = questions
-
-    return render_template("quiz.html", questions=questions)
-
 @app.route('/quiz', methods=['POST'])
 def quiz():
     username = session.get('username')
