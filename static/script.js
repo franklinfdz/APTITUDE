@@ -21,21 +21,19 @@ let interval = setInterval(() => {
 
 
 // 🔥 Smart Explanation Viewer
-
 function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
-    // Store data globally once
-    if (!window.explanationsStore) {
-        window.explanationsStore = {};
+    if (!window.expStore) {
+        window.expStore = {};
     }
-    window.explanationsStore[id] = explanations;
+    window.expStore[id] = explanations;
 
     if (level === 1) {
         el.innerHTML = `
             <b>🧠 Level 1:</b> ${explanations.level1}
             <br><br>
-            <button onclick="showExplanation(2, '${id}', window.explanationsStore['${id}'])">
+            <button onclick="showExplanation(2, '${id}', window.expStore['${id}'])">
                 Explain More 🔍
             </button>
         `;
@@ -45,7 +43,7 @@ function showExplanation(level, id, explanations) {
         el.innerHTML = `
             <b>🧠 Level 2:</b><br>${explanations.level2.replace(/\n/g, "<br>")}
             <br><br>
-            <button onclick="showExplanation(3, '${id}', window.explanationsStore['${id}'])">
+            <button onclick="showExplanation(3, '${id}', window.expStore['${id}'])">
                 Explain Like Beginner 👶
             </button>
         `;
@@ -57,3 +55,4 @@ function showExplanation(level, id, explanations) {
         `;
     }
 }
+
