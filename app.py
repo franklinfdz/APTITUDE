@@ -14,13 +14,33 @@ app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 # 🧠 SMART EXPLANATION ENGINE
 # =========================================================
 def generate_explanations(question, answer, qtype):
-    if qtype in ["quant", "di"]:
-        return solve_quant(question, answer)
-    elif qtype == "logic":
-        return solve_logic(question, answer)
-    elif qtype == "verbal":
-        return solve_verbal(question, answer)
-    return default_explanation(question, answer)
+    try:
+        qtype = (qtype or "").lower().strip()
+
+        if qtype in ["quant", "di"]:
+            return solve_quant(question, answer)
+
+        elif qtype == "logic":
+            return solve_logic(question, answer)
+
+        elif qtype == "verbal":
+            return solve_verbal(question, answer)
+
+        # 🔥 FALLBACK SMART ROUTING BASED ON QUESTION CONTENT
+        if any(word in question.lower() for word in ["%", "of", "sum", "+", "-", "×", "x", "÷", "average"]):
+            return solve_quant(question, answer)
+
+        if any(word in question.lower() for word in ["next", "missing", "series", "odd"]):
+            return solve_logic(question, answer)
+
+        if any(word in question.lower() for word in ["synonym", "antonym", "fill", "spelling", "plural"]):
+            return solve_verbal(question, answer)
+
+        return default_explanation(question, answer)
+
+    except Exception as e:
+        print("EXPLANATION ERROR:", e)
+        return default_explanation(question, answer)
 
 def build_levels(steps, answer, question=""):
 
@@ -221,7 +241,6 @@ def solve_verbal(question, answer):
     # Article (a/an)
     elif "___" in question and ("apple" in q or "umbrella" in q):
         steps.append("Use 'An' Before Vowel Sound")
-
     # Default
     else:
         steps.append("Read Sentence Naturally")
