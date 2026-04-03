@@ -44,7 +44,7 @@ function showExplanation(level, id, explanations) {
             <b>🧠 Level 2:</b><br>${explanations.level2.replace(/\n/g, "<br>")}
             <br><br>
             <button onclick="showExplanation(3, '${id}', window.expStore['${id}'])">
-                Explain Like Beginner 👶
+                Explain Thoroughly
             </button>
         `;
     }
