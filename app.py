@@ -110,41 +110,8 @@ def default_explanation(question, answer):
 # 📊 QUESTIONS
 # =========================================================
 all_questions = [
-    {
-        "q": "What Is The Main Cause Of SDK Usage Error?",
-        "options": ["Incorrect API Key", "Network Issue", "Unsupported Version"],
-        "answer": "Incorrect API Key",
-        "type": "logic",
-        "difficulty": "easy"
-    },
-    {
-        "q": "How Can You Verify API Key Validity?",
-        "options": ["Use SDK Test Method", "Guess Randomly", "Ignore It"],
-        "answer": "Use SDK Test Method",
-        "type": "logic",
-        "difficulty": "easy"
-    },
-    {
-        "q": "What Should You Do If SDK Version Is Unsupported?",
-        "options": ["Update SDK", "Downgrade App", "Ignore Warning"],
-        "answer": "Update SDK",
-        "type": "logic",
-        "difficulty": "medium"
-    },
-    {
-        "q": "How Can Network Issues Affect SDK Usage?",
-        "options": ["Timeout Errors", "Incorrect Results", "App Crash"],
-        "answer": "Timeout Errors",
-        "type": "logic",
-        "difficulty": "medium"
-    },
-    {
-        "q": "What Is The Recommended Way To Handle SDK Authentication?",
-        "options": ["Hardcode Keys", "Use Environment Variables", "Ignore Auth"],
-        "answer": "Use Environment Variables",
-        "type": "logic",
-        "difficulty": "hard"
-    }
+
+
 ]
 
 def get_questions():
