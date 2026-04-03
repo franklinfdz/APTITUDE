@@ -224,7 +224,7 @@ def login():
             cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_pw))
             conn.commit()
             session['username'] = username
-            return redirect('/dashboard')
+            return redirect('/quiz')
 
     return render_template("login.html")
 
