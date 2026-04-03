@@ -146,39 +146,35 @@ def get_user_level(xp):
         return "hard"
 
 
-def get_questions(user_xp=0):
-    level = get_user_level(user_xp)
+def get_xp(difficulty):
+    if difficulty == "easy":
+        return 5
+    elif difficulty == "medium":
+        return 10
+    elif difficulty == "hard":
+        return 20
+    return 5
 
-    easy = [q for q in all_questions if q["difficulty"] == "easy"]
-    medium = [q for q in all_questions if q["difficulty"] == "medium"]
-    hard = [q for q in all_questions if q["difficulty"] == "hard"]
 
-    if level == "easy":
-        selected = (
-            random.sample(easy, 7) +
-            random.sample(medium, 3)
-        )
+def get_questions(user_xp):
+    if user_xp < 100:
+        level = "easy"
+    elif user_xp < 300:
+        level = "medium"
+    else:
+        level = "hard"
 
-    elif level == "medium":
-        selected = (
-            random.sample(easy, 3) +
-            random.sample(medium, 5) +
-            random.sample(hard, 2)
-        )
+    filtered = [q for q in all_questions if q["difficulty"] == level]
 
-    else:  # HARD LEVEL
-        selected = (
-            random.sample(medium, 4) +
-            random.sample(hard, 6)
-        )
-
-    random.shuffle(selected)
+    random.shuffle(filtered)
+    selected = filtered[:10]  # 🔥 NOW 10 QUESTIONS
 
     for i, q in enumerate(selected):
         q["id"] = i
 
     return selected
-
+    
+        
 
 # =========================================================
 # 🗄️ DATABASE
@@ -216,13 +212,13 @@ init_db()
 # 🏆 RANK SYSTEM (XP BASED)
 # =========================================================
 def get_rank(xp):
-    if xp >= 500:
+    if xp >= 1000:
         return "Elite"
-    elif xp >= 250:
-        return "Pro"
-    elif xp >= 100:
+    elif xp >= 600:
+        return "Expert"
+    elif xp >= 300:
         return "Advanced"
-    elif xp >= 50:
+    elif xp >= 100:
         return "Intermediate"
     else:
         return "Beginner"
@@ -261,28 +257,68 @@ def login():
 
     return render_template("login.html")
 
-@app.route('/quiz', methods=['POST'])
-def quiz():
+
+@app.route('/submit', methods=['POST'])
+def submit():
+    questions = session.get('questions', [])
     username = session.get('username')
 
-    if not username:
-        return redirect('/')
+    score = 0
+    xp_earned = 0
+    wrong = []
+
+    for i, q in enumerate(questions):
+        ans = request.form.get(f"q{i}")
+
+        if ans == q["answer"]:
+            score += 1
+            xp_earned += get_xp(q["difficulty"])
+        else:
+            explanation = generate_explanations(q["q"], q["answer"], q["type"])
+            wrong.append({
+                "q": q["q"],
+                "correct": q["answer"],
+                "exp": explanation
+            })
 
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT total_xp FROM users WHERE username=%s", (username,))
-    user = cur.fetchone()
+    # 🔥 Get OLD XP
+    cur.execute("SELECT xp FROM users WHERE username=%s", (username,))
+    old_xp = cur.fetchone()[0]
 
+    new_xp = old_xp + xp_earned
+
+    cur.execute("""
+        UPDATE users
+        SET total_score = total_score + %s,
+            total_attempts = total_attempts + %s,
+            xp = %s
+        WHERE username = %s
+    """, (score, len(questions), new_xp, username))
+
+    conn.commit()
     cur.close()
     conn.close()
 
-    user_xp = user[0] if user else 0
+    # 🔥 Rank Change Detection
+    old_rank = get_rank(old_xp)
+    new_rank = get_rank(new_xp)
 
-    questions = get_questions(user_xp)
-    session['questions'] = questions
+    rank_up = old_rank != new_rank
 
-    return render_template("quiz.html", questions=questions)
+    return render_template(
+        "result.html",
+        score=score,
+        total=len(questions),
+        wrong=wrong,
+        xp_earned=xp_earned,
+        new_xp=new_xp,
+        rank=get_rank(new_xp),
+        rank_up=rank_up
+    )
+
 
 @app.route('/answer', methods=['POST'])
 def answer():
@@ -354,18 +390,28 @@ def dashboard():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT total_score, total_attempts, total_xp
+        SELECT total_score, total_attempts, xp
         FROM users
         WHERE username = %s
     """, (username,))
 
     user = cur.fetchone()
+
     cur.close()
     conn.close()
 
     score, attempts, xp = user
+
     accuracy = round((score / attempts) * 100, 2) if attempts else 0
     rank = get_rank(xp)
+
+    # 🔥 Difficulty Insight
+    if xp < 100:
+        difficulty = "Easy"
+    elif xp < 300:
+        difficulty = "Medium"
+    else:
+        difficulty = "Hard"
 
     return render_template(
         "dashboard.html",
@@ -373,8 +419,9 @@ def dashboard():
         score=score,
         attempts=attempts,
         accuracy=accuracy,
+        rank=rank,
         xp=xp,
-        rank=rank
+        difficulty=difficulty
     )
 
 @app.route('/leaderboard')
@@ -383,9 +430,9 @@ def leaderboard():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT username, total_score, total_attempts, total_xp
+        SELECT username, xp, total_attempts
         FROM users
-        ORDER BY total_xp DESC
+        ORDER BY xp DESC
         LIMIT 10
     """)
 
@@ -393,8 +440,8 @@ def leaderboard():
 
     leaderboard_data = []
     for user in data:
-        rank = get_rank(user[3])
-        leaderboard_data.append((user[0], user[1], user[2], user[3], rank))
+        rank = get_rank(user[1])
+        leaderboard_data.append((user[0], user[1], user[2], rank))
 
     cur.close()
     conn.close()
