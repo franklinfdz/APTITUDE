@@ -202,45 +202,24 @@ def get_rank(xp):
 # 🌐 ROUTES
 # =========================================================
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+@app.route('/quiz', methods=['GET', 'POST'])
+def quiz():
+    username = session.get('username')
+    if not username:
+        return redirect('/')
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT xp FROM users WHERE username=%s", (username,))
+    row = cur.fetchone()
+    xp = row[0] if row else 0
+    cur.close()
+    conn.close()
 
-        # Check if user exists
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
-        user = cur.fetchone()
+    questions = get_questions(xp)
+    session['questions'] = questions
 
-        if user:
-            # User exists, check password
-            if check_password_hash(user[2], password):
-                session['username'] = username
-                cur.close()
-                conn.close()
-                return redirect('/quiz')  # Redirect directly to quiz
-            else:
-                cur.close()
-                conn.close()
-                return render_template("login.html", error="Invalid Credentials")
-        else:
-            # New user, create account
-            hashed_pw = generate_password_hash(password)
-            cur.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
-                (username, hashed_pw)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-
-            session['username'] = username
-            return redirect('/quiz')  # Redirect directly to quiz
-
-    return render_template("login.html")                
+    return render_template("quiz.html", questions=questions)
 
 @app.route('/quiz', methods=['POST'])
 def quiz():
