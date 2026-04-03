@@ -1,7 +1,7 @@
 import os
 import random
 import re
-import psycopg2
+import psycopg
 from flask import Flask, render_template, request, session, jsonify
 
 # =========================================================
@@ -168,7 +168,7 @@ def get_db_connection():
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-    return psycopg2.connect(db_url, sslmode='require')
+    return psycopg.connect(db_url, sslmode='require')
 
 def init_db():
     conn = get_db_connection()
