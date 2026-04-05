@@ -4,39 +4,62 @@
 <link rel="stylesheet" href="/static/style.css">
 
 <style>
-.leaderboard-container {
-  width: 100%;
-  max-width: 600px;
+
+/* 🔥 CONTAINER FIX */
+.container {
+  width: 95%;
+  max-width: 700px;
   margin: auto;
+  padding: 20px;
 }
 
+/* 🔥 TITLE */
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* 🔥 LEADERBOARD */
+.leaderboard-container {
+  width: 100%;
+}
+
+/* 🔥 CARD */
 .leader-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
+  padding: 14px;
   margin: 10px 0;
-  border-radius: 12px;
+  border-radius: 14px;
+
   background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+
   box-shadow: 0 0 10px rgba(0,255,255,0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  transition: all 0.25s ease;
 }
 
+/* 🔥 HOVER EFFECT */
 .leader-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 20px rgba(0,255,255,0.3);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 0 25px rgba(0,255,255,0.25);
 }
 
+/* 🔥 RANK NUMBER */
 .rank-number {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: bold;
-  width: 50px;
+  width: 45px;
 }
 
+/* TOP COLORS */
 .top1 { color: gold; }
 .top2 { color: silver; }
 .top3 { color: #cd7f32; }
 
+/* 🔥 USER INFO */
 .user-info {
   flex: 1;
   margin-left: 10px;
@@ -46,65 +69,111 @@
   font-size: 1.1rem;
 }
 
-.user-stats {
-  text-align: right;
-}
-
+/* 🔥 BADGE */
 .rank-badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 15px;
+  border-radius: 20px;
   background: #00ffff;
   color: #000;
   font-weight: bold;
-  margin-top: 3px;
+  margin-top: 4px;
 }
+
+/* 🔥 STATS */
+.user-stats {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+/* 🔥 ENTRY ANIMATION */
+.leader-card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.leader-card:nth-child(1) { animation-delay: 0.05s; }
+.leader-card:nth-child(2) { animation-delay: 0.1s; }
+.leader-card:nth-child(3) { animation-delay: 0.15s; }
+.leader-card:nth-child(4) { animation-delay: 0.2s; }
+.leader-card:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🔥 MOBILE NAV SPACING FIX */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+}
+
+/* Prevent Content Hidden Behind Navbar */
+body {
+  padding-bottom: 70px;
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
   <h1>🏆 Leaderboard</h1>
 
   <div class="leaderboard-container">
 
-    {% for user in data %}
-    <div class="leader-card">
+    {% if data|length == 0 %}
+      <p style="text-align:center;">No Players Yet</p>
+    {% else %}
 
-      <!-- Rank Number -->
-      <div class="rank-number 
-        {% if loop.index == 1 %}top1
-        {% elif loop.index == 2 %}top2
-        {% elif loop.index == 3 %}top3
-        {% endif %}
-      ">
-        #{{ loop.index }}
+      {% for user in data %}
+      <div class="leader-card">
+
+        <!-- Rank -->
+        <div class="rank-number 
+          {% if loop.index == 1 %}top1
+          {% elif loop.index == 2 %}top2
+          {% elif loop.index == 3 %}top3
+          {% endif %}
+        ">
+          #{{ loop.index }}
+        </div>
+
+        <!-- Info -->
+        <div class="user-info">
+          <b>{{ user[0] }}</b><br>
+          <span class="rank-badge">{{ user[3] }}</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="user-stats">
+          <p>⚡ {{ user[1] }} XP</p>
+          <p>📝 {{ user[2] }} Attempts</p>
+        </div>
+
       </div>
+      {% endfor %}
 
-      <!-- User Info -->
-      <div class="user-info">
-        <b>{{ user[0] }}</b><br>
-        <span class="rank-badge">{{ user[3] }}</span>
-      </div>
-
-      <!-- Stats -->
-      <div class="user-stats">
-        <p>⚡ {{ user[1] }} XP</p>
-        <p>📝 {{ user[2] }} Attempts</p>
-      </div>
-
-    </div>
-    {% endfor %}
+    {% endif %}
 
   </div>
 
-  <br>
-
-  <div class="center-buttons">
-    <a href="/dashboard"><button>Dashboard</button></a>
-    <a href="/"><button>Home</button></a>
-  </div>
+</div>
 
 <!-- 🔥 MOBILE NAVBAR -->
 <div class="bottom-nav">
@@ -114,13 +183,61 @@
   <a href="/logout">🚪</a>
 </div>
 
-</div>
-
 <!-- BACKGROUND SYSTEM -->
 <div class="bg-shape shape1"></div>
 <div class="bg-shape shape2"></div>
 <div class="cursor-glow"></div>
 <canvas id="particles"></canvas>
+
+<!-- 🔥 BACKGROUND SCRIPT -->
+<script>
+document.addEventListener("mousemove", (e) => {
+  const glow = document.querySelector(".cursor-glow");
+  glow.style.left = e.clientX + "px";
+  glow.style.top = e.clientY + "px";
+});
+
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 3 + 1,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5
+  });
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach(p => {
+    p.x += p.dx;
+    p.y += p.dy;
+
+    if (p.x > canvas.width) p.x = 0;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.y > canvas.height) p.y = 0;
+    if (p.y < 0) p.y = canvas.height;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,255,255,0.5)";
+    ctx.fill();
+  });
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
 
 </body>
 </html>
