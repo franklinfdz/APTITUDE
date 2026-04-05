@@ -14,7 +14,7 @@
       height: 100%;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #0a0a0a;
-      overflow: hidden;
+      overflow-x: hidden;
       color: #fff;
     }
 
@@ -29,26 +29,32 @@
       max-width: 400px;
       padding: 30px;
       backdrop-filter: blur(12px);
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.04);
       border-radius: 15px;
       box-shadow: 0 0 40px rgba(0,255,255,0.08);
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -40%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
     }
 
     h1 {
-      font-size: 2.3rem;
-      margin-bottom: 10px;
+      font-size: 2.2rem;
+      margin-bottom: 8px;
       letter-spacing: 1px;
     }
 
     .subtitle {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #aaa;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .home-img {
-      width: 90px;
-      margin-bottom: 20px;
+      width: 80px;
+      margin-bottom: 18px;
       border-radius: 12px;
       opacity: 0.9;
     }
@@ -62,7 +68,8 @@
       background: rgba(255,255,255,0.05);
       color: #fff;
       outline: none;
-      transition: 0.2s;
+      transition: 0.25s;
+      font-size: 0.95rem;
     }
 
     input:focus {
@@ -73,7 +80,7 @@
     button {
       width: 100%;
       padding: 12px;
-      margin-top: 10px;
+      margin-top: 5px;
       border: none;
       border-radius: 8px;
       background: linear-gradient(135deg, #00ffff, #0099ff);
@@ -81,6 +88,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.25s ease;
+      font-size: 0.95rem;
     }
 
     button:hover {
@@ -89,34 +97,17 @@
       color: #fff;
     }
 
-    .center-buttons {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .center-buttons button {
-      flex: 1;
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-    }
-
-    .center-buttons button:hover {
-      background: rgba(0,255,255,0.2);
-    }
-
     .error {
       color: #ff4d4d;
       font-size: 0.85rem;
       margin-bottom: 10px;
     }
 
-    /* Background Effects */
+    /* 🔥 Background Effects */
     .bg-shape {
       position: absolute;
-      width: 300px;
-      height: 300px;
+      width: 280px;
+      height: 280px;
       border-radius: 50%;
       filter: blur(100px);
       z-index: 1;
@@ -136,8 +127,8 @@
 
     .cursor-glow {
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       pointer-events: none;
       background: rgba(0, 255, 255, 0.5);
@@ -155,7 +146,7 @@
 
     @media (max-width: 500px) {
       .main-container {
-        width: 90%;
+        width: 92%;
         padding: 20px;
       }
     }
@@ -164,12 +155,15 @@
 
 <body>
 
+  <!-- 🔥 BACKGROUND -->
   <div class="bg-shape shape1"></div>
   <div class="bg-shape shape2"></div>
   <div class="cursor-glow"></div>
   <canvas id="particles"></canvas>
 
+  <!-- 🔥 LOGIN BOX -->
   <div class="main-container">
+
     <h1>Aptitude Platform</h1>
     <div class="subtitle">Structured Learning • Measurable Growth</div>
 
@@ -180,45 +174,53 @@
       <div class="error">{{ error }}</div>
     {% endif %}
 
+    <!-- 🔥 FORM -->
     <form method="post">
-      <input type="text" name="username" placeholder="Username" required>
+      <input type="text" name="username" placeholder="Username" required autocomplete="off">
       <input type="password" name="password" placeholder="Password" required>
       <button type="submit">Continue</button>
     </form>
 
-    <div class="center-buttons">
-      <button onclick="window.location.href='/dashboard'">Dashboard</button>
-      <button onclick="window.location.href='/leaderboard'">Leaderboard</button>
-    </div>
   </div>
 
+  <!-- 🔥 SCRIPTS -->
   <script>
+    // Cursor Glow
     document.addEventListener("mousemove", (e) => {
       const glow = document.querySelector(".cursor-glow");
-      glow.style.left = e.clientX + "px";
-      glow.style.top = e.clientY + "px";
+      if (glow) {
+        glow.style.left = e.clientX + "px";
+        glow.style.top = e.clientY + "px";
+      }
     });
 
+    // Particles
     const canvas = document.getElementById("particles");
     const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
 
     let particles = [];
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 60; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 3 + 1,
-        dx: (Math.random() - 0.5) * 0.5,
-        dy: (Math.random() - 0.5) * 0.5
+        r: Math.random() * 2 + 1,
+        dx: (Math.random() - 0.5) * 0.4,
+        dy: (Math.random() - 0.5) * 0.4
       });
     }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       particles.forEach(p => {
-        p.x += p.dx; p.y += p.dy;
+        p.x += p.dx;
+        p.y += p.dy;
 
         if (p.x > canvas.width) p.x = 0;
         if (p.x < 0) p.x = canvas.width;
@@ -230,15 +232,13 @@
         ctx.fillStyle = "rgba(0,255,255,0.4)";
         ctx.fill();
       });
+
       requestAnimationFrame(animate);
     }
 
     animate();
 
-    window.addEventListener('resize', () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
+    window.addEventListener('resize', resizeCanvas);
   </script>
 
 </body>
