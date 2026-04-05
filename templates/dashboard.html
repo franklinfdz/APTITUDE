@@ -70,6 +70,12 @@
   </div>
 </div>
 
+<!-- 🔥 LEVEL UP POPUP -->
+<div id="levelUpPopup" class="level-popup">
+  <h2>🚀 Level Up!</h2>
+  <p id="newRankText"></p>
+</div>
+  
 <!-- 🔥 STATS -->
 <div class="stats-box">
   <p>Total Attempts: {{ attempts }}</p>
@@ -127,14 +133,18 @@ if (scores.length > 0) {
 <!-- 🔥 XP ANIMATION -->
 <script>
 const xp = {{ xp }};
-const progress = xp % 100; // Next level progress
-
+const progress = Math.min((xp % 100), 100);
+  
 const fill = document.getElementById("xpFill");
 
 setTimeout(() => {
   fill.style.width = progress + "%";
 }, 300);
 </script>
+
+{% if data|length == 0 %}
+<p style="text-align:center;">No Players Yet</p>
+{% endif %}
 
 <!-- BACKGROUND SYSTEM -->
 <div class="bg-shape shape1"></div>
