@@ -8,58 +8,51 @@ from flask import Flask, render_template, request, session, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # =========================================================
-# 🚀 FLASK APP
+# 🚀 APP CONFIG
 # =========================================================
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 
+
 # =========================================================
-# 🧠 AI ENGINE (LEVEL 4 - GROQ)
+# 🧠 AI EXPLANATION (SAFE VERSION)
 # =========================================================
 def ai_explanation(question, correct):
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        return "AI Key Missing"
+        return "AI Not Configured"
 
     try:
-        url = "https://api.groq.com/openai/v1/chat/completions"
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": "llama3-8b-8192",  # Faster + lighter (best for Render)
-            "messages": [
-                {
-                    "role": "user",
-                    "content": f"""
-Explain This Aptitude Question Step By Step Clearly.
-
-Question: {question}
-Correct Answer: {correct}
-
-Break It Down Like A Teacher. Keep It Short And Smart.
-"""
-                }
-            ]
-        }
-
-        res = requests.post(url, headers=headers, json=data, timeout=8)
+        res = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama3-8b-8192",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": f"Explain This Step By Step:\n{question}\nAnswer: {correct}"
+                    }
+                ]
+            },
+            timeout=6
+        )
 
         if res.status_code == 200:
             return res.json()["choices"][0]["message"]["content"]
 
-        return "AI Response Failed"
+        return "AI Failed"
 
     except Exception:
-        return "AI Timeout / Error"
+        return "AI Timeout"
 
 
 # =========================================================
-# 🧠 EXPLANATION ENGINE (LEVEL 1-3)
+# 🧠 EXPLANATION ENGINE
 # =========================================================
 def generate_explanation(q, user_answer=None):
 
@@ -68,212 +61,60 @@ def generate_explanation(q, user_answer=None):
     qtype = q.get("type", "")
     subtype = q.get("subtype", "")
 
-    def join_steps(steps):
-        return "\n".join(steps)
-
     nums = list(map(int, re.findall(r'\d+', question)))
 
-    # ================= WRONG ANALYSIS =================
     why_wrong = ""
     if user_answer and user_answer != correct:
-        why_wrong = join_steps([
-            f"Your Answer: {user_answer}",
-            f"Correct Answer: {correct}",
-            "",
-            "Mistake Insight:",
-            "Calculation Error / Pattern Miss / Concept Gap"
-        ])
+        why_wrong = f"Your Answer: {user_answer}\nCorrect: {correct}\nCheck Concept"
 
-    # =====================================================
-    # 🧠 QUANT ENGINE
-    # =====================================================
+    # ===== QUANT =====
     if qtype == "quant":
 
         if subtype == "percentage" and len(nums) >= 2:
             p, v = nums[0], nums[1]
-            result = (p/100)*v
-
             return {
                 "level1": correct,
-                "level2": f"{p}% Of {v} = {result}",
-                "level3": "Formula → (P/100 × Value)",
+                "level2": f"{p}% of {v} = {(p/100)*v}",
+                "level3": "Formula: (P/100)*Value",
                 "level4": ai_explanation(question, correct),
-                "concept": "Percentage",
                 "why_wrong": why_wrong
             }
 
-        elif subtype == "average" and nums:
-            total = sum(nums)
-            avg = total / len(nums)
-
+        if subtype == "average" and nums:
             return {
                 "level1": correct,
-                "level2": f"Sum={total}, Count={len(nums)}, Avg={avg}",
+                "level2": f"Avg = {sum(nums)}/{len(nums)}",
                 "level3": "Average = Sum / Count",
                 "level4": ai_explanation(question, correct),
-                "concept": "Average",
                 "why_wrong": why_wrong
             }
 
-        elif subtype == "speed" and len(nums) >= 2:
-            d, t = nums[0], nums[1]
-
-            return {
-                "level1": correct,
-                "level2": f"Speed={d}/{t}={d/t}",
-                "level3": "Speed = Distance / Time",
-                "level4": ai_explanation(question, correct),
-                "concept": "Speed",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype in ["interest", "compound_interest"]:
-            return {
-                "level1": correct,
-                "level2": "Apply Interest Formula Carefully",
-                "level3": "SI=(P×R×T)/100 | CI Uses Compounding",
-                "level4": ai_explanation(question, correct),
-                "concept": "Interest",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype in ["profit_loss", "profit_logic"]:
-            return {
-                "level1": correct,
-                "level2": "Profit = SP - CP",
-                "level3": "Profit% = (Profit/CP)*100",
-                "level4": ai_explanation(question, correct),
-                "concept": "Profit Loss",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype == "ratio":
-            return {
-                "level1": correct,
-                "level2": "Divide Total Based On Ratio",
-                "level3": "Part = (Ratio/Total Ratio)*Value",
-                "level4": ai_explanation(question, correct),
-                "concept": "Ratio",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype == "time_work":
-            return {
-                "level1": correct,
-                "level2": "Work = Rate × Time",
-                "level3": "Use LCM Or Reciprocal Method",
-                "level4": ai_explanation(question, correct),
-                "concept": "Time Work",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype in ["hcf", "lcm", "hcf_lcm"]:
-            return {
-                "level1": correct,
-                "level2": "Use Prime Factorization",
-                "level3": "LCM=Max Power, HCF=Min Power",
-                "level4": ai_explanation(question, correct),
-                "concept": "HCF LCM",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype in ["modulus", "clock", "age"]:
-            return {
-                "level1": correct,
-                "level2": "Apply Concept Logic Carefully",
-                "level3": "Break Into Equations Or Patterns",
-                "level4": ai_explanation(question, correct),
-                "concept": subtype,
-                "why_wrong": why_wrong
-            }
-
-    # =====================================================
-    # 🧠 LOGIC ENGINE
-    # =====================================================
-    elif qtype == "logic":
-
-        if subtype == "series":
-            diffs = [nums[i+1]-nums[i] for i in range(len(nums)-1)] if len(nums) >= 2 else []
-
-            return {
-                "level1": correct,
-                "level2": f"Differences → {diffs}",
-                "level3": "Check +, ×, Alternating Pattern",
-                "level4": ai_explanation(question, correct),
-                "concept": "Series",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype in ["pattern", "pattern_mix", "coding", "alphabet"]:
-            return {
-                "level1": correct,
-                "level2": "Identify Hidden Rule",
-                "level3": "Look For Increment / Encoding Logic",
-                "level4": ai_explanation(question, correct),
-                "concept": "Pattern Logic",
-                "why_wrong": why_wrong
-            }
-
-        elif subtype == "odd_one":
-            return {
-                "level1": correct,
-                "level2": "Find Mismatch",
-                "level3": "Compare Category Or Property",
-                "level4": ai_explanation(question, correct),
-                "concept": "Classification",
-                "why_wrong": why_wrong
-            }
-
-    # =====================================================
-    # 🧠 VERBAL ENGINE
-    # =====================================================
-    elif qtype == "verbal":
-        return {
-            "level1": correct,
-            "level2": "Check Grammar / Meaning",
-            "level3": "Apply Rule Or Context",
-            "level4": ai_explanation(question, correct),
-            "concept": "Verbal",
-            "why_wrong": why_wrong
-        }
-
-    # =====================================================
-    # 📊 DI ENGINE
-    # =====================================================
-    elif qtype == "di":
-        return {
-            "level1": correct,
-            "level2": "Interpret Data Carefully",
-            "level3": "Apply Percentage / Ratio",
-            "level4": ai_explanation(question, correct),
-            "concept": "Data Interpretation",
-            "why_wrong": why_wrong
-        }
-
-    # =====================================================
-    # ⚠️ FALLBACK
-    # =====================================================
+    # ===== DEFAULT =====
     return {
         "level1": correct,
         "level2": "Apply Logic",
         "level3": "Break Stepwise",
         "level4": ai_explanation(question, correct),
-        "concept": "General",
         "why_wrong": why_wrong
     }
 
 
 # =========================================================
-# 🧠 XP + QUESTIONS
+# 🧠 XP SYSTEM
 # =========================================================
-def get_xp(difficulty):
-    return {"easy": 5, "medium": 10, "hard": 20}.get(difficulty, 5)
+def get_xp(diff):
+    return {"easy": 5, "medium": 10, "hard": 20}.get(diff, 5)
 
 
 def get_questions(user_xp):
+
     level = "easy" if user_xp < 100 else "medium" if user_xp < 300 else "hard"
 
-    filtered = [q for q in all_questions if q["difficulty"] == level]
+    filtered = [q for q in all_questions if q.get("difficulty") == level]
+
+    if not filtered:
+        filtered = all_questions  # fallback safety
+
     random.shuffle(filtered)
 
     selected = filtered[:10]
@@ -288,6 +129,7 @@ def get_questions(user_xp):
 # 🗄️ DATABASE
 # =========================================================
 def get_db_connection():
+
     db_url = os.environ.get("DATABASE_URL")
 
     if not db_url:
@@ -296,7 +138,7 @@ def get_db_connection():
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-    return psycopg.connect(db_url, sslmode='require')
+    return psycopg.connect(db_url, sslmode="require")
 
 
 def init_db():
@@ -323,23 +165,25 @@ init_db()
 
 
 # =========================================================
-# 🏆 RANK SYSTEM
+# 🏆 RANK
 # =========================================================
 def get_rank(xp):
     if xp >= 1000: return "Elite"
-    elif xp >= 600: return "Expert"
-    elif xp >= 300: return "Advanced"
-    elif xp >= 100: return "Intermediate"
+    if xp >= 600: return "Expert"
+    if xp >= 300: return "Advanced"
+    if xp >= 100: return "Intermediate"
     return "Beginner"
 
 
 # =========================================================
 # 🌐 ROUTES
 # =========================================================
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
 
     if request.method == 'POST':
+
         username = request.form.get('username')
         password = request.form.get('password')
 
@@ -349,13 +193,16 @@ def login():
         cur.execute("SELECT * FROM users WHERE username=%s", (username,))
         user = cur.fetchone()
 
-        if user and check_password_hash(user[2], password):
-            session['username'] = username
-            return redirect('/quiz')
-
-        elif not user:
+        if user:
+            if check_password_hash(user[2], password):
+                session['username'] = username
+                return redirect('/quiz')
+        else:
             hashed = generate_password_hash(password)
-            cur.execute("INSERT INTO users (username, password) VALUES (%s,%s)", (username, hashed))
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s,%s)",
+                (username, hashed)
+            )
             conn.commit()
             session['username'] = username
             return redirect('/quiz')
@@ -365,7 +212,7 @@ def login():
     return render_template("login.html")
 
 
-@app.route('/quiz', methods=['GET', 'POST'])
+@app.route('/quiz')
 def quiz():
 
     if 'username' not in session:
@@ -389,11 +236,15 @@ def submit():
     questions = session.get('questions', [])
     username = session.get('username')
 
+    if not questions or not username:
+        return redirect('/')
+
     score = 0
     xp_earned = 0
     wrong = []
 
     for i, q in enumerate(questions):
+
         ans = request.form.get(f"q{i}")
 
         if ans == q["answer"]:
@@ -426,7 +277,8 @@ def submit():
     cur.close()
     conn.close()
 
-    return render_template("result.html",
+    return render_template(
+        "result.html",
         score=score,
         total=len(questions),
         wrong=wrong,
@@ -438,12 +290,30 @@ def submit():
 
 @app.route('/dashboard')
 def dashboard():
+    if 'username' not in session:
+        return redirect('/')
     return render_template('dashboard.html')
 
 
 @app.route('/leaderboard')
 def leaderboard():
-    return render_template('leaderboard.html')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT username, xp, total_score
+        FROM users
+        ORDER BY xp DESC
+        LIMIT 10
+    """)
+
+    users = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template('leaderboard.html', users=users)
 
 
 @app.route('/logout')
@@ -457,4 +327,4 @@ def logout():
 # =========================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port)
