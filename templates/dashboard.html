@@ -133,15 +133,32 @@ if (scores.length > 0) {
 <!-- 🔥 XP ANIMATION -->
 <script>
 const xp = {{ xp }};
-const progress = Math.min((xp % 100), 100);
-  
+const progress = xp % 100;
+
 const fill = document.getElementById("xpFill");
 
 setTimeout(() => {
   fill.style.width = progress + "%";
 }, 300);
-</script>
 
+// 🔥 LEVEL UP DETECTION
+const lastXP = localStorage.getItem("lastXP") || 0;
+
+if (xp > lastXP && (xp % 100) < (lastXP % 100)) {
+  const popup = document.getElementById("levelUpPopup");
+  const rankText = document.getElementById("newRankText");
+
+  rankText.innerText = "New Rank: {{ rank }}";
+
+  popup.classList.add("show");
+
+  setTimeout(() => {
+    popup.classList.remove("show");
+  }, 2500);
+}
+
+localStorage.setItem("lastXP", xp);
+</script>
 {% if data|length == 0 %}
 <p style="text-align:center;">No Players Yet</p>
 {% endif %}
