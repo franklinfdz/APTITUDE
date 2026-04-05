@@ -31,34 +31,55 @@ body::before {
 
 /* ================= MAIN CONTAINER ================= */
 .container {
-    width: 90%;
-    max-width: 100%;
+    width: 92%;
+    max-width: 420px; /* 🔥 Mobile App Width */
     margin: 20px auto;
-    padding: 30px;
+    padding: 20px;
     position: relative;
     z-index: 2;
-    background: rgba(255,255,255,0.1);
-    border-radius: 15px;
-    backdrop-filter: blur(15px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.4),
+        inset 0 0 10px rgba(255,255,255,0.05);
+
+    transition: all 0.3s ease;
 }
 
 /* ================= BUTTONS ================= */
 button {
+    width: 100%;
+    margin-top: 10px;
+
     background: linear-gradient(45deg, #00c6ff, #0072ff);
     border: none;
-    padding: 12px 20px;
+    padding: 14px;
+
     color: white;
-    border-radius: 10px;
+    border-radius: 12px;
+
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
-    font-size: 16px;
-    transition: 0.3s;
+    font-size: 15px;
+
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
 }
 
+/* Hover Effect */
 button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px #00c6ff;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 198, 255, 0.5);
+}
+
+/* Click Effect */
+button:active {
+    transform: scale(0.97);
 }
 
 /* ================= QUESTIONS ================= */
@@ -331,3 +352,9 @@ h1 {
   from { box-shadow: 0 0 5px #00ffff; }
   to { box-shadow: 0 0 20px #00ffff; }
 }
+
+.stats-box:hover {
+  transform: scale(1.02);
+  transition: 0.2s;
+}
+e
