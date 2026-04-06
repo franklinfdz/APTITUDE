@@ -288,7 +288,7 @@ def submit():
     )
 
 
-@app.route('/dashboard')
+@app.route('/profile')
 def dashboard():
 
     if 'username' not in session:
@@ -322,7 +322,7 @@ def dashboard():
     conn.close()
 
     return render_template(
-        'dashboard.html',
+        'profile.html',
         username=username,
         xp=xp,
         rank=get_rank(xp),
