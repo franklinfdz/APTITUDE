@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
 /* 🔥 Container */
 .container {
     width: 90%;
@@ -102,22 +101,18 @@
   box-shadow: 0 0 10px rgba(0,255,255,0.3);
 }
 
-/* 🔥 LEVEL POPUP */
-/* 🔥 OVERLAY */
+/* 🔥 LEVEL POPUP OVERLAY */
 .level-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-
   backdrop-filter: blur(12px);
   background: rgba(0,0,0,0.6);
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   z-index: 9999;
 }
 
@@ -128,25 +123,16 @@
   padding: 30px;
   border-radius: 20px;
   text-align: center;
-
   background: linear-gradient(135deg, #00ffff, #0077ff);
   color: #000;
-
   box-shadow: 0 0 40px rgba(0,255,255,0.5);
-
   animation: popIn 0.5s ease;
 }
 
 /* 🔥 ANIMATION */
 @keyframes popIn {
-  from {
-    transform: scale(0.7) translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+  from { transform: scale(0.7) translateY(30px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 /* 🔥 BUTTON */
@@ -161,29 +147,13 @@
 }
 
 /* 🔥 RANK COLORS */
-.beginner {
-  background: linear-gradient(135deg, #00ffff, #0077ff);
-}
-
-.intermediate {
-  background: linear-gradient(135deg, #00ff99, #00cc66);
-}
-
-.advanced {
-  background: linear-gradient(135deg, #ffcc00, #ff8800);
-}
-
-.pro {
-  background: linear-gradient(135deg, #ff4d4d, #990000);
-}
+.beginner { background: linear-gradient(135deg, #00ffff, #0077ff); }
+.intermediate { background: linear-gradient(135deg, #00ff99, #00cc66); }
+.advanced { background: linear-gradient(135deg, #ffcc00, #ff8800); }
+.pro { background: linear-gradient(135deg, #ff4d4d, #990000); }
 
 /* 🔥 Buttons */
-button {
-    width: 100%;
-    margin-top: 10px;
-    padding: 12px;
-    border-radius: 10px;
-}
+button { width: 100%; margin-top: 10px; padding: 12px; border-radius: 10px; }
 
 /* 🔥 Bottom Nav */
 .bottom-nav {
@@ -191,33 +161,24 @@ button {
   bottom: 0;
   left: 0;
   width: 100%;
-
-  display: flex; /* ALWAYS visible */
-
+  display: flex;
   justify-content: space-around;
   align-items: center;
-
   background: rgba(0,0,0,0.95);
   padding: 12px 0;
-
   border-top: 1px solid rgba(255,255,255,0.1);
   z-index: 1000;
 }
+
 .bottom-nav a {
   color: white;
   font-size: 20px;
   text-decoration: none;
 }
 
-@media (min-width: 768px) {
-  .bottom-nav {
-    display: none;
-  }
-}
+@media (min-width: 768px) { .bottom-nav { display: none; } }
 
-.page-wrapper {
-  padding-bottom: 90px; /* space for nav */
-}
+.page-wrapper { padding-bottom: 90px; }
 
 </style>
 </head>
@@ -228,9 +189,7 @@ button {
 
 <!-- 🔥 PROFILE HEADER -->
 <div class="profile-header">
-  <div class="profile-avatar">
-    {{ username[0]|upper }}
-  </div>
+  <div class="profile-avatar">{{ username[0]|upper }}</div>
   <div class="profile-name">{{ username }}</div>
   <div class="rank-badge">{{ rank }}</div>
 </div>
@@ -244,26 +203,19 @@ button {
 <!-- 🔥 XP PROGRESS -->
 <div class="xp-section">
   <p>Progress To Next Level</p>
-  <div class="xp-bar">
-    <div class="xp-fill" id="xpFill"></div>
-  </div>
-  <p style="margin-top:10px;">
-    Next Rank At {{ ((xp//100)+1)*100 }} XP
-  </p>
+  <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+  <p style="margin-top:10px;">Next Rank At {{ ((xp//100)+1)*100 }} XP</p>
 </div>
 
 <!-- 🔥 BADGES -->
 <div class="stats-box">
   <h3>🏅 Achievements</h3>
-
   <div class="badge-grid">
     {% for badge in badges %}
       <div class="badge">{{ badge }}</div>
     {% endfor %}
   </div>
 </div>
-
-<!-- 🔥 LEVEL UP POPUP -->
 
 <!-- 🔥 PERFORMANCE -->
 <div class="stats-box">
@@ -275,7 +227,6 @@ button {
 <canvas id="chart"></canvas>
 
 <br>
-
 <div class="center-buttons">
   <a href="/quiz"><button>Start Quiz</button></a>
   <a href="/leaderboard"><button>Leaderboard</button></a>
@@ -291,21 +242,23 @@ button {
   <a href="/logout">🚪</a>
 </div>
 
+<!-- 🔥 LEVEL POPUP -->
 <div id="levelUpOverlay" class="level-overlay" style="display:none;">
   <div class="level-popup" id="levelPopup">
-
     <h2 id="levelTitle">Level Up!</h2>
     <p id="levelText">You Reached Intermediate</p>
-
     <button onclick="closeLevelPopup()">Continue</button>
-
   </div>
 </div>
-    
-<!-- 🔥 CHART -->
+
+<!-- 🔥 CONFETTI CANVAS -->
+<canvas id="confettiCanvas" style="position:fixed;top:0;left:0;pointer-events:none;z-index:9998;"></canvas>
+
+<!-- 🔥 SCRIPTS -->
 <script>
 const scores = {{ scores | tojson if scores else "[]" }};
 
+// Chart.js Line Graph
 if (scores.length > 0) {
   new Chart(document.getElementById('chart'), {
       type: 'line',
@@ -321,38 +274,83 @@ if (scores.length > 0) {
       options: { responsive: true }
   });
 }
-</script>
 
-<!-- 🔥 XP SYSTEM -->
-<script>
+// Rank Config
+const rankConfig = {
+    beginner: { title: "Getting Started 🚀", message: "Welcome To Beginner Level", xpColor: "#00ffff" },
+    intermediate: { title: "Nice Progress ⚡", message: "You Reached Intermediate", xpColor: "#00ff99" },
+    advanced: { title: "Impressive 🔥", message: "You Are Now Advanced", xpColor: "#ffcc00" },
+    pro: { title: "Elite Level 💎", message: "You Reached Pro Rank", xpColor: "#ff4d4d" }
+};
+
+// Show Level Popup
 function showLevelPopup(rank) {
     const overlay = document.getElementById("levelUpOverlay");
     const popup = document.getElementById("levelPopup");
+    const title = document.getElementById("levelTitle");
     const text = document.getElementById("levelText");
+    const xpFill = document.getElementById("xpFill");
+    const data = rankConfig[rank.toLowerCase()] || rankConfig.beginner;
 
-    // Reset Classes
-    popup.className = "level-popup";
-
-    // Apply Rank Style
-    popup.classList.add(rank.toLowerCase());
-
-    // Set Text
-    text.innerText = "You Reached " + rank;
+    popup.className = "level-popup " + rank.toLowerCase();
+    title.innerText = data.title;
+    text.innerText = data.message;
+    xpFill.style.background = data.xpColor;
+    xpFill.style.width = "0%";
 
     overlay.style.display = "flex";
+    setTimeout(() => { xpFill.style.width = "100%"; }, 300);
+
+    startConfetti(rank);
 }
 
+// Close Popup
 function closeLevelPopup() {
     document.getElementById("levelUpOverlay").style.display = "none";
 }
-</script>
 
-<script>
+// Confetti Animation
+function startConfetti(rank) {
+    const canvas = document.getElementById("confettiCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let count = 80;
+    if (rank === "advanced") count = 120;
+    if (rank === "pro") count = 180;
+
+    let confetti = Array.from({length: count}, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 2,
+        d: Math.random() * 50,
+        color: `hsl(${Math.random()*360},100%,50%)`
+    }));
+
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        confetti.forEach(c => { ctx.fillStyle=c.color; ctx.fillRect(c.x,c.y,c.r,c.r); });
+        update();
+    }
+
+    function update() {
+        confetti.forEach(c => {
+            c.y += 2;
+            c.x += Math.sin(c.d);
+            if(c.y>canvas.height){ c.y=-10; c.x=Math.random()*canvas.width; }
+        });
+    }
+
+    function loop() { draw(); requestAnimationFrame(loop); }
+    loop();
+}
+
+// Auto Show Level Up If Needed
 {% if level_up %}
-    showLevelPopup("{{ rank }}");
+showLevelPopup("{{ rank }}");
 {% endif %}
 </script>
-    
 
 </body>
 </html>
