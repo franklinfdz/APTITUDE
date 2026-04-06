@@ -7,43 +7,18 @@ from questions import all_questions
 from flask import Flask, render_template, request, session, redirect, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# =========================================================
-# 🚀 APP CONFIG
-# =========================================================
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 
 
 # =========================================================
-# 🧠 AI EXPLANATION (SAFE VERSION)
+# 🧠 AI EXPLANATION
 # =========================================================
 def ai_explanation(question, correct):
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         return "AI Not Configured Properly"
-
-    q_lower = question.lower()
-
-    # 🔍 Smarter Category Detection
-    if "%" in question or "percent" in q_lower:
-        category = "Percentage"
-    elif "average" in q_lower or "mean" in q_lower:
-        category = "Average"
-    elif "ratio" in q_lower:
-        category = "Ratio"
-    elif any(x in q_lower for x in ["speed", "distance", "time"]):
-        category = "Speed/Time/Distance"
-    elif "interest" in q_lower:
-        category = "Interest"
-    elif any(x in q_lower for x in ["profit", "loss"]):
-        category = "Profit/Loss"
-    elif "work" in q_lower:
-        category = "Time & Work"
-    elif any(x in q_lower for x in ["series", "pattern"]):
-        category = "Series/Pattern"
-    else:
-        category = "General Aptitude"
 
     try:
         res = requests.post(
@@ -54,38 +29,15 @@ def ai_explanation(question, correct):
             },
             json={
                 "model": "llama3-8b-8192",
-                "temperature": 0.3,  # 🔥 Makes It More Accurate
+                "temperature": 0.3,
                 "messages": [
                     {
                         "role": "system",
-                        "content": f"""
-You Are A Highly Skilled Aptitude Teacher.
-
-Category: {category}
-
-You MUST Follow This Format:
-
-1. Step-By-Step Solution (With Numbers Clearly Shown)
-2. Formula Used
-3. Explanation In Simple Words
-4. Shortcut Or Trick (If Possible)
-
-Important Rules:
-- Do NOT Guess Missing Values
-- Use Only Given Data
-- Be Logical And Clear
-- Avoid Fluff
-"""
+                        "content": "Explain Clearly Step By Step With Formula And Logic"
                     },
                     {
                         "role": "user",
-                        "content": f"""
-Question:
-{question}
-
-Correct Answer:
-{correct}
-"""
+                        "content": f"Question: {question}\nAnswer: {correct}"
                     }
                 ]
             },
@@ -95,266 +47,37 @@ Correct Answer:
         if res.status_code == 200:
             return res.json()["choices"][0]["message"]["content"]
 
-        return "AI Failed To Generate Explanation"
+        return "AI Failed"
 
     except Exception:
-        return "AI Timeout Or Network Issue"
+        return "AI Error"
+
 
 # =========================================================
-# 🧠 EXPLANATION ENGINE
+# 🧠 EXPLANATION ENGINE (FIXED)
 # =========================================================
 def generate_explanation(q, user_answer=None):
 
     question = q.get("q", "")
     correct = str(q.get("answer", ""))
-    qtype = q.get("type", "")
-    subtype = q.get("subtype", "")
 
-    nums = list(map(float, re.findall(r'\d+\.?\d*', question)))
-
-    # ================= WRONG FEEDBACK =================
-    why_wrong = ""
-    if user_answer and str(user_answer) != correct:
-        why_wrong = f"Your Answer Was {user_answer}, But Correct Answer Is {correct}. Focus On The Core Concept Used Here."
-
-    # ================= DEFAULT STRUCT =================
     exp = {
+        "question": question,   # ✅ FIX ADDED
         "level1": correct,
-        "level2": "",
-        "level3": "",
-        "level4": ai_explanation(question, correct),
-        "why_wrong": why_wrong
+        "level2": "Solve Step By Step Using Basic Logic.",
+        "level3": "Understand The Core Concept Behind The Question."
     }
 
-    # =========================================================
-    # 🟢 QUANT SECTION
-    # =========================================================
-    if qtype == "quant":
-
-        # 🔹 Percentage
-        if "percent" in question.lower() or subtype.startswith("percentage"):
-            if len(nums) >= 2:
-                p, v = nums[0], nums[1]
-                exp["level2"] = f"Convert {p}% Into Decimal → {p}/100. Then Multiply With {v}. That Gives {correct}."
-                exp["level3"] = "Percentage Means A Part Out Of 100. First Convert Into Fraction, Then Multiply With The Number."
-                return exp
-
-        # 🔹 Average
-        if "average" in question.lower():
-            total = sum(nums)
-            count = len(nums)
-            exp["level2"] = f"Add All Values → {total}. Divide By Total Numbers ({count}). That Gives {correct}."
-            exp["level3"] = "Average Means Equal Distribution. Add Everything And Divide Into Equal Parts."
-            return exp
-
-        # 🔹 Ratio
-        if "ratio" in question.lower():
-            exp["level2"] = "Convert Ratio Into Parts, Then Distribute Total Accordingly."
-            exp["level3"] = "Ratio Splits A Quantity Into Proportions. Think Of Sharing Based On Given Parts."
-            return exp
-
-        # 🔹 Speed / Distance / Time
-        if "speed" in question.lower():
-            exp["level2"] = "Use Formula: Speed = Distance ÷ Time. Rearrange Based On What Is Asked."
-            exp["level3"] = "Speed Tells How Fast Something Moves. Divide Distance By Time."
-            return exp
-
-        # 🔹 Interest
-        if "interest" in question.lower():
-            exp["level2"] = "Simple Interest = (P × R × T) / 100. Identify Principal, Rate, And Time From Question."
-            exp["level3"] = "Interest Is Extra Money Earned Over Time. Multiply Principal, Rate, And Time."
-            return exp
-
-        # 🔹 LCM / HCF
-        if "lcm" in question.lower():
-            exp["level2"] = "Find Common Multiples Of Both Numbers And Pick The Smallest One."
-            exp["level3"] = "LCM Means Smallest Number Divisible By Both Numbers."
-            return exp
-
-        if "hcf" in question.lower():
-            exp["level2"] = "Find Common Factors And Pick The Greatest One."
-            exp["level3"] = "HCF Means Largest Number That Divides Both."
-            return exp
-
-        # 🔹 Square / Cube / Root
-        if "square root" in question.lower() or "√" in question:
-            exp["level2"] = "Find Number Which Multiplied By Itself Gives The Given Value."
-            exp["level3"] = "Square Root Is Opposite Of Squaring."
-            return exp
-
-        if "square" in question.lower():
-            exp["level2"] = f"Multiply Number By Itself → Example: {nums[0]} × {nums[0]}."
-            exp["level3"] = "Square Means Number Times Itself."
-            return exp
-
-        if "cube" in question.lower():
-            exp["level2"] = f"Multiply Number Three Times → {nums[0]} × {nums[0]} × {nums[0]}."
-            exp["level3"] = "Cube Means Multiply Number Three Times."
-            return exp
-
-        # 🔹 Profit / Loss
-        if "profit" in question.lower() or "loss" in question.lower():
-            exp["level2"] = "Profit = SP - CP. Profit% = (Profit / CP) × 100."
-            exp["level3"] = "Profit Means Gain. Loss Means Losing Money."
-            return exp
-
-        # 🔹 Time & Work
-        if "work" in question.lower():
-            exp["level2"] = "Use Work Formula: Work = Rate × Time. Combine Efficiencies."
-            exp["level3"] = "More Workers Means Less Time. Work Is Shared."
-            return exp
-
-        # 🔹 Clock
-        if "clock" in question.lower():
-            exp["level2"] = "Use Angle Formula: (Hour Hand - Minute Hand)."
-            exp["level3"] = "Clock Angles Depend On Positions Of Hands."
-            return exp
-
-        # 🔹 Modulus / Remainder
-        if "remainder" in question.lower():
-            exp["level2"] = "Divide Number And Take What Is Left."
-            exp["level3"] = "Remainder Is What Stays After Division."
-            return exp
-
-    # =========================================================
-    # 🟡 LOGIC SECTION
-    # =========================================================
-    if qtype == "logic":
-
-        if subtype in ["series", "pattern"]:
-            exp["level2"] = "Check Pattern: Addition, Multiplication, Squares, Or Alternating Pattern."
-            exp["level3"] = "Series Is Like A Puzzle Pattern. Find What Changes Between Numbers."
-            return exp
-
-        if subtype == "odd_one":
-            exp["level2"] = "Compare All Options And Find One That Does Not Follow The Same Rule."
-            exp["level3"] = "Odd One Out Means One Is Different."
-            return exp
-
-        if subtype == "coding":
-            exp["level2"] = "Assign Numeric Values To Letters And Look For Pattern."
-            exp["level3"] = "Each Letter Has A Value. Combine Them To Find Pattern."
-            return exp
-
-        if subtype == "alphabet":
-            exp["level2"] = "Check Alphabet Positions And Pattern Between Letters."
-            exp["level3"] = "Letters Follow A Sequence Like Numbers."
-            return exp
-
-    # =========================================================
-    # 🔵 VERBAL SECTION
-    # =========================================================
-    if qtype == "verbal":
-
-        if subtype == "grammar":
-            exp["level2"] = "Apply Grammar Rules Based On Subject And Tense."
-            exp["level3"] = "Grammar Is About Correct Sentence Structure."
-            return exp
-
-        if subtype == "synonym":
-            exp["level2"] = "Find Word With Same Meaning."
-            exp["level3"] = "Synonym Means Similar Meaning."
-            return exp
-
-        if subtype == "antonym":
-            exp["level2"] = "Find Word With Opposite Meaning."
-            exp["level3"] = "Antonym Means Opposite Meaning."
-            return exp
-
-        if subtype == "plural":
-            exp["level2"] = "Apply Plural Rules Or Irregular Forms."
-            exp["level3"] = "Plural Means More Than One."
-            return exp
-
-        if subtype == "spelling":
-            exp["level2"] = "Check Correct Letter Arrangement Carefully."
-            exp["level3"] = "Spelling Needs Attention To Detail."
-            return exp
-
-    # =========================================================
-    # 🟣 DI SECTION
-    # =========================================================
-    if qtype == "di":
-        exp["level2"] = "Analyze Given Data And Apply Percentage Or Ratio Logic."
-        exp["level3"] = "DI Means Understanding Data And Calculating Step By Step."
-        return exp
-
-    # =========================================================
-    # ⚪ FALLBACK (SMART DEFAULT)
-    # =========================================================
-    exp["level2"] = "Break The Question Into Parts And Apply Basic Concepts Step By Step."
-    exp["level3"] = "Think Calmly. Every Problem Has A Pattern Or Rule."
     return exp
 
 
 # =========================================================
-# 🧠 XP SYSTEM
+# 🧠 XP + RANK
 # =========================================================
 def get_xp(diff):
     return {"easy": 5, "medium": 10, "hard": 20}.get(diff, 5)
 
 
-def get_questions(user_xp):
-
-    level = "easy" if user_xp < 100 else "medium" if user_xp < 300 else "hard"
-
-    filtered = [q for q in all_questions if q.get("difficulty") == level]
-
-    if not filtered:
-        filtered = all_questions  # fallback safety
-
-    random.shuffle(filtered)
-
-    selected = filtered[:10]
-
-    for i, q in enumerate(selected):
-        q["id"] = i
-
-    return selected
-
-
-# =========================================================
-# 🗄️ DATABASE
-# =========================================================
-def get_db_connection():
-
-    db_url = os.environ.get("DATABASE_URL")
-
-    if not db_url:
-        raise Exception("DATABASE_URL Missing")
-
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-    return psycopg.connect(db_url, sslmode="require")
-
-
-def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT,
-            total_score INTEGER DEFAULT 0,
-            total_attempts INTEGER DEFAULT 0,
-            xp INTEGER DEFAULT 0
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-init_db()
-
-
-# =========================================================
-# 🏆 RANK
-# =========================================================
 def get_rank(xp):
     if xp >= 1000: return "Elite"
     if xp >= 600: return "Expert"
@@ -364,40 +87,25 @@ def get_rank(xp):
 
 
 # =========================================================
+# 🗄️ DB
+# =========================================================
+def get_db_connection():
+
+    db_url = os.environ.get("DATABASE_URL")
+
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+    return psycopg.connect(db_url, sslmode="require")
+
+
+# =========================================================
 # 🌐 ROUTES
 # =========================================================
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
-
-    if request.method == 'POST':
-
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
-        user = cur.fetchone()
-
-        if user:
-            if check_password_hash(user[2], password):
-                session['username'] = username
-                return redirect('/quiz')
-        else:
-            hashed = generate_password_hash(password)
-            cur.execute(
-                "INSERT INTO users (username, password) VALUES (%s,%s)",
-                (username, hashed)
-            )
-            conn.commit()
-            session['username'] = username
-            return redirect('/quiz')
-
-        return render_template("login.html", error="Invalid Credentials")
-
-    return render_template("login.html")
+@app.route('/')
+def home():
+    return redirect('/quiz')
 
 
 @app.route('/quiz')
@@ -412,12 +120,15 @@ def quiz():
     cur.execute("SELECT xp FROM users WHERE username=%s", (session['username'],))
     xp = cur.fetchone()[0]
 
-    questions = get_questions(xp)
+    questions = random.sample(all_questions, 10)
     session['questions'] = questions
 
     return render_template("quiz.html", questions=questions)
 
 
+# =========================================================
+# ✅ SUBMIT (LEVEL FIX INCLUDED)
+# =========================================================
 @app.route('/submit', methods=['POST'])
 def submit():
 
@@ -448,19 +159,16 @@ def submit():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # 🔥 GET CURRENT XP
     cur.execute("SELECT xp FROM users WHERE username=%s", (username,))
     current_xp = cur.fetchone()[0]
 
-    # 🔥 CALCULATE NEW XP
     new_xp = current_xp + xp_earned
 
-    # 🔥 ✅ ADD THIS BLOCK RIGHT HERE
+    # ✅ LEVEL LOGIC
     old_rank = get_rank(current_xp)
     new_rank = get_rank(new_xp)
     level_up = old_rank != new_rank
 
-    # 🔥 UPDATE DB
     cur.execute("""
         UPDATE users
         SET total_score = total_score + %s,
@@ -473,7 +181,9 @@ def submit():
     cur.close()
     conn.close()
 
-    # 🔥 PASS level_up + new_rank
+    # ✅ STORE TEMP FLAG
+    session['level_up'] = level_up
+
     return render_template(
         "result.html",
         score=score,
@@ -482,10 +192,13 @@ def submit():
         xp_earned=xp_earned,
         new_xp=new_xp,
         rank=new_rank,
-        level_up=level_up   # ✅ IMPORTANT
+        level_up=level_up
     )
 
 
+# =========================================================
+# ✅ PROFILE (FIXED POPUP + BUG)
+# =========================================================
 @app.route('/profile')
 def dashboard():
 
@@ -497,7 +210,6 @@ def dashboard():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # USER DATA
     cur.execute("""
         SELECT total_score, total_attempts, xp
         FROM users
@@ -512,12 +224,11 @@ def dashboard():
 
     accuracy = round((score / attempts) * 100, 2) if attempts > 0 else 0
 
-    # FAKE HISTORY (Optional Upgrade Later)
-    scores = [score]  # You Can Later Store History In DB
-    totals = [attempts]
-
     cur.close()
     conn.close()
+
+    # ✅ GET + CLEAR LEVEL FLAG (VERY IMPORTANT)
+    level_up = session.pop('level_up', False)
 
     return render_template(
         'profile.html',
@@ -527,37 +238,15 @@ def dashboard():
         accuracy=accuracy,
         attempts=attempts,
         score=score,
-        scores=scores,
-        totals=totals
+        scores=[score],
+        totals=[attempts],
+        level_up=level_up
     )
 
-@app.route('/leaderboard')
-def leaderboard():
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT username, xp, total_attempts
-        FROM users
-        ORDER BY xp DESC
-        LIMIT 10
-    """)
-
-    users = cur.fetchall()
-
-    # ADD RANK LABEL
-    data = []
-    for u in users:
-        rank = get_rank(u[1])
-        data.append((u[0], u[1], u[2], rank))
-
-    cur.close()
-    conn.close()
-
-    return render_template("leaderboard.html", data=data)
-
-
+# =========================================================
+# AI ROUTE
+# =========================================================
 @app.route("/ai_explain", methods=["POST"])
 def ai_explain():
 
@@ -571,19 +260,10 @@ def ai_explain():
 
     explanation = ai_explanation(question, answer)
 
-    return jsonify({
-        "explanation": explanation
-    })
+    return jsonify({"explanation": explanation})
+
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
-
-
-# =========================================================
-# ▶ RUN
-# =========================================================
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
