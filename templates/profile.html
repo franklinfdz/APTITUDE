@@ -69,7 +69,7 @@
     background: linear-gradient(90deg, #00ffff, #00ff99);
     width: 0%;
     border-radius: 20px;
-    transition: width 1s ease-in-out;
+    transition: width 1.5s ease-in-out;
     box-shadow: 0 0 10px #00ffff;
 }
 
@@ -261,21 +261,36 @@ button { width: 100%; margin-top: 10px; padding: 12px; border-radius: 10px; }
 <script>
 const scores = {{ scores | tojson if scores else "[]" }};
 
-// Chart.js Line Graph
-if (scores.length > 0) {
-  new Chart(document.getElementById('chart'), {
-      type: 'line',
-      data: {
-          labels: scores.map((_, i) => "Attempt " + (i + 1)),
-          datasets: [{
-              label: 'Performance',
-              data: scores,
-              borderColor: 'cyan',
-              tension: 0.3
-          }]
-      },
-      options: { responsive: true }
-  });
+// Chart.js Line Graph With Smooth Animation
+let chartInstance = null;
+function animateChart(data) {
+    const ctx = document.getElementById('chart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map((_, i) => "Attempt " + (i + 1)),
+            datasets: [{
+                label: 'Performance',
+                data: data,
+                borderColor: 'cyan',
+                tension: 0.3,
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: 'cyan'
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1500, easing: 'easeOutQuart' }
+        }
+    });
+}
+
+// XP Fill Animation
+function animateXP(xpPercent, color) {
+    const xpFill = document.getElementById('xpFill');
+    xpFill.style.background = color;
+    setTimeout(() => { xpFill.style.width = xpPercent + '%'; }, 100);
 }
 
 // Rank Config
@@ -292,18 +307,14 @@ function showLevelPopup(rank) {
     const popup = document.getElementById("levelPopup");
     const title = document.getElementById("levelTitle");
     const text = document.getElementById("levelText");
-    const xpFill = document.getElementById("xpFill");
     const data = rankConfig[rank.toLowerCase()] || rankConfig.beginner;
 
     popup.className = "level-popup " + rank.toLowerCase();
     title.innerText = data.title;
     text.innerText = data.message;
-    xpFill.style.background = data.xpColor;
-    xpFill.style.width = "0%";
 
     overlay.style.display = "flex";
-    setTimeout(() => { xpFill.style.width = "100%"; }, 300);
-
+    animateXP(100, data.xpColor);
     startConfetti(rank);
 }
 
@@ -349,10 +360,20 @@ function startConfetti(rank) {
     loop();
 }
 
-// Auto Show Level Up If Needed
-{% if level_up %}
-showLevelPopup("{{ rank }}");
-{% endif %}
+// 🔥 ON PAGE LOAD
+window.addEventListener('DOMContentLoaded', () => {
+    if (scores.length > 0) animateChart(scores);
+
+    // Auto Animate XP Bar Based On Current XP (Assuming Max XP = 100 For Current Level)
+    const xpPercent = Math.min(({{ xp }} % 100), 100);
+    const currentRank = "{{ rank }}";
+    const xpColor = (rankConfig[currentRank.toLowerCase()] || rankConfig.beginner).xpColor;
+    animateXP(xpPercent, xpColor);
+
+    {% if level_up %}
+    showLevelPopup("{{ rank }}");
+    {% endif %}
+});
 </script>
 
 </body>
