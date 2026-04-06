@@ -112,6 +112,11 @@ body {
   color: #000;
 }
 
+#chart {
+    width: 100%;
+    height: 300px;
+}
+
 .level-popup button {
   margin-top: 20px;
   padding: 10px 20px;
@@ -187,32 +192,44 @@ body {
 </div>
 
 <script>
-const scores = {{ scores | tojson if scores else "[]" }};
+window.onload = function () {
 
-// Chart
-if (scores.length > 0) {
-    new Chart(document.getElementById('chart'), {
-        type: 'line',
-        data: {
-            labels: scores.map((_, i) => "Attempt " + (i + 1)),
-            datasets: [{
-                data: scores,
-                borderColor: 'cyan',
-                tension: 0.3
-            }]
-        }
-    });
-}
+    const scores = {{ scores | tojson if scores else "[]" }};
 
-// XP Animation
-const xp = {{ xp }};
-const percent = xp % 100;
-document.getElementById("xpFill").style.width = percent + "%";
+    // Chart
+    if (scores.length > 0) {
+        const ctx = document.getElementById('chart');
 
-// Popup Trigger
-{% if level_up %}
-document.getElementById("levelUpOverlay").style.display = "flex";
-{% endif %}
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: scores.map((_, i) => "Attempt " + (i + 1)),
+                datasets: [{
+                    data: scores,
+                    borderColor: 'cyan',
+                    backgroundColor: 'rgba(0,255,255,0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // XP Animation
+    const xp = {{ xp }};
+    const percent = xp % 100;
+    document.getElementById("xpFill").style.width = percent + "%";
+
+    // Popup Trigger
+    {% if level_up %}
+    document.getElementById("levelUpOverlay").style.display = "flex";
+    {% endif %}
+
+};
 
 function closeLevelPopup() {
     document.getElementById("levelUpOverlay").style.display = "none";
