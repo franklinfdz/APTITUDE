@@ -464,7 +464,6 @@ def leaderboard():
     conn.close()
 
     return render_template("result.html",
-    ...
     level_up=level_up,
     rank=new_rank
     )
