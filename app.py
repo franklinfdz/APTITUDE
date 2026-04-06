@@ -247,8 +247,7 @@ def submit():
 @app.route('/profile')
 def dashboard():
 
-    if 'username' not in session:
-        return redirect('/')
+
 
     username = session['username']
 
