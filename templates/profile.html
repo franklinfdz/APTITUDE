@@ -137,13 +137,18 @@ button {
   bottom: 0;
   left: 0;
   width: 100%;
-  display: flex;
+
+  display: flex; /* ALWAYS visible */
+
   justify-content: space-around;
+  align-items: center;
+
   background: rgba(0,0,0,0.95);
   padding: 12px 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
 
+  border-top: 1px solid rgba(255,255,255,0.1);
+  z-index: 1000;
+}
 .bottom-nav a {
   color: white;
   font-size: 20px;
