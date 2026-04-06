@@ -103,24 +103,78 @@
 }
 
 /* 🔥 LEVEL POPUP */
-.level-popup {
+/* 🔥 OVERLAY */
+.level-overlay {
   position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  background: #00ffff;
-  color: black;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  opacity: 0;
-  transition: all 0.4s ease;
-  z-index: 999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.6);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
 }
 
-.level-popup.show {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
+/* 🔥 POPUP CARD */
+.level-popup {
+  width: 90%;
+  max-width: 350px;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+
+  background: linear-gradient(135deg, #00ffff, #0077ff);
+  color: #000;
+
+  box-shadow: 0 0 40px rgba(0,255,255,0.5);
+
+  animation: popIn 0.5s ease;
+}
+
+/* 🔥 ANIMATION */
+@keyframes popIn {
+  from {
+    transform: scale(0.7) translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 🔥 BUTTON */
+.level-popup button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: black;
+  color: white;
+  cursor: pointer;
+}
+
+/* 🔥 RANK COLORS */
+.beginner {
+  background: linear-gradient(135deg, #00ffff, #0077ff);
+}
+
+.intermediate {
+  background: linear-gradient(135deg, #00ff99, #00cc66);
+}
+
+.advanced {
+  background: linear-gradient(135deg, #ffcc00, #ff8800);
+}
+
+.pro {
+  background: linear-gradient(135deg, #ff4d4d, #990000);
 }
 
 /* 🔥 Buttons */
@@ -210,10 +264,6 @@ button {
 </div>
 
 <!-- 🔥 LEVEL UP POPUP -->
-<div id="levelUpPopup" class="level-popup">
-  <h2>🚀 Level Up!</h2>
-  <p id="newRankText"></p>
-</div>
 
 <!-- 🔥 PERFORMANCE -->
 <div class="stats-box">
@@ -241,6 +291,17 @@ button {
   <a href="/logout">🚪</a>
 </div>
 
+<div id="levelUpOverlay" class="level-overlay" style="display:none;">
+  <div class="level-popup" id="levelPopup">
+
+    <h2 id="levelTitle">Level Up!</h2>
+    <p id="levelText">You Reached Intermediate</p>
+
+    <button onclick="closeLevelPopup()">Continue</button>
+
+  </div>
+</div>
+    
 <!-- 🔥 CHART -->
 <script>
 const scores = {{ scores | tojson if scores else "[]" }};
@@ -264,41 +325,34 @@ if (scores.length > 0) {
 
 <!-- 🔥 XP SYSTEM -->
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+function showLevelPopup(rank) {
+    const overlay = document.getElementById("levelUpOverlay");
+    const popup = document.getElementById("levelPopup");
+    const text = document.getElementById("levelText");
 
-  const xp = {{ xp }};
-  const progress = xp % 100;
+    // Reset Classes
+    popup.className = "level-popup";
 
-  const fill = document.getElementById("xpFill");
+    // Apply Rank Style
+    popup.classList.add(rank.toLowerCase());
 
-  if (fill) {
-    setTimeout(() => {
-      fill.style.width = progress + "%";
-    }, 200);
-  }
+    // Set Text
+    text.innerText = "You Reached " + rank;
 
-  const lastXP = parseInt(localStorage.getItem("lastXP")) || 0;
+    overlay.style.display = "flex";
+}
 
-  const lastLevel = Math.floor(lastXP / 100);
-  const currentLevel = Math.floor(xp / 100);
-
-  if (currentLevel > lastLevel) {
-    const popup = document.getElementById("levelUpPopup");
-    const rankText = document.getElementById("newRankText");
-
-    rankText.innerText = "New Rank: {{ rank }}";
-
-    popup.classList.add("show");
-
-    setTimeout(() => {
-      popup.classList.remove("show");
-    }, 2500);
-  }
-
-  localStorage.setItem("lastXP", xp);
-
-});
+function closeLevelPopup() {
+    document.getElementById("levelUpOverlay").style.display = "none";
+}
 </script>
+
+<script>
+{% if level_up %}
+    showLevelPopup("{{ rank }}");
+{% endif %}
+</script>
+    
 
 </body>
 </html>
