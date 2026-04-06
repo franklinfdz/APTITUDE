@@ -7,12 +7,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+body {
+    margin: 0;
+    padding-bottom: 80px; /* ✅ Fix: Space For Bottom Nav */
+}
+
 .container {
     width: 90%;
     max-width: 500px;
     margin: 20px auto;
     padding: 20px;
-    padding-bottom: 90px;
 }
 
 .profile-header {
@@ -121,10 +125,12 @@
   position: fixed;
   bottom: 0;
   width: 100%;
+  height: 70px; /* ✅ Fix: Defined Height */
   display: flex;
   justify-content: space-around;
+  align-items: center;
   background: rgba(0,0,0,0.95);
-  padding: 12px 0;
+  padding: 10px 0;
 }
 </style>
 </head>
