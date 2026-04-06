@@ -54,147 +54,188 @@ def ai_explanation(question, correct):
 # =========================================================
 # 🧠 EXPLANATION ENGINE
 # =========================================================
-import re
-
 def generate_explanation(q, user_answer=None):
+
     question = q.get("q", "")
-    correct = q.get("answer", "")
+    correct = str(q.get("answer", ""))
     qtype = q.get("type", "")
     subtype = q.get("subtype", "")
 
-    # Extract numbers for calculation-based logic
     nums = list(map(float, re.findall(r'\d+\.?\d*', question)))
 
+    # ================= WRONG FEEDBACK =================
     why_wrong = ""
-    if user_answer and str(user_answer).strip() != str(correct).strip():
-        why_wrong = f"Your Answer: {user_answer}\nCorrect Answer: {correct}\nCheck Concept & Steps"
+    if user_answer and str(user_answer) != correct:
+        why_wrong = f"Your Answer Was {user_answer}, But Correct Answer Is {correct}. Focus On The Core Concept Used Here."
 
-    level1, level2, level3 = correct, "", ""
+    # ================= DEFAULT STRUCT =================
+    exp = {
+        "level1": correct,
+        "level2": "",
+        "level3": "",
+        "level4": ai_explanation(question, correct),
+        "why_wrong": why_wrong
+    }
 
-    # ================= QUANT QUESTIONS =================
+    # =========================================================
+    # 🟢 QUANT SECTION
+    # =========================================================
     if qtype == "quant":
-        if subtype in ["percentage"]:
+
+        # 🔹 Percentage
+        if "percent" in question.lower() or subtype.startswith("percentage"):
             if len(nums) >= 2:
                 p, v = nums[0], nums[1]
-                level2 = f"Percentage Formula: ({p}/100) × {v} = {(p/100)*v}"
-                level3 = f"A Percentage Means A Part Out Of 100. So {p}% Of {v} Means We Take {p} Parts Out Of Every 100 And Apply To {v}, Giving {(p/100)*v}"
-        
-        elif subtype in ["average"]:
-            if nums:
-                avg = sum(nums)/len(nums)
-                level2 = f"Average = Sum({nums}) / Count({len(nums)}) = {avg}"
-                level3 = f"To Find Average, Add All Numbers Together Then Divide By How Many Numbers There Are. Here Sum={sum(nums)}, Count={len(nums)}, So Average={avg}"
-        
-        elif subtype in ["multiplication", "arithmetic"]:
-            if len(nums) >= 2:
-                level2 = f"Multiply {nums[0]} × {nums[1]} = {nums[0]*nums[1]}"
-                level3 = f"Multiplication Means Adding {nums[0]} Together {int(nums[1])} Times. So {nums[0]} × {nums[1]} = {nums[0]*nums[1]}"
-        
-        elif subtype in ["division"]:
-            if len(nums) >= 2:
-                level2 = f"Divide {nums[0]} ÷ {nums[1]} = {nums[0]/nums[1]}"
-                level3 = f"Division Means Splitting {nums[0]} Into {nums[1]} Equal Parts. Each Part Is {nums[0]/nums[1]}"
-        
-        elif subtype in ["square"]:
-            if nums:
-                level2 = f"{nums[0]}² = {nums[0]**2}"
-                level3 = f"Square Means Multiply The Number By Itself. So {nums[0]} × {nums[0]} = {nums[0]**2}"
-        
-        elif subtype in ["cube"]:
-            if nums:
-                level2 = f"{nums[0]}³ = {nums[0]**3}"
-                level3 = f"Cube Means Multiply The Number By Itself Twice More. So {nums[0]} × {nums[0]} × {nums[0]} = {nums[0]**3}"
-        
-        elif subtype in ["subtraction"]:
-            if len(nums) >= 2:
-                level2 = f"{nums[0]} - {nums[1]} = {nums[0]-nums[1]}"
-                level3 = f"Subtraction Means Removing {nums[1]} From {nums[0]}, Resulting In {nums[0]-nums[1]}"
-        
-        elif subtype in ["interest", "simple_interest"]:
-            if len(nums) >= 3:
-                p, r, t = nums
-                si = (p*r*t)/100
-                level2 = f"SI = (Principal × Rate × Time)/100 = ({p}×{r}×{t})/100 = {si}"
-                level3 = f"Simple Interest Means Paying Extra Money Based On Principal And Time. Formula: P×R×T /100, Here It Gives {si}"
-        
-        elif subtype in ["compound_interest"]:
-            if len(nums) >= 3:
-                p, r, t = nums
-                ci = p*((1+r/100)**t -1)
-                level2 = f"CI = P*((1+R/100)^T -1) = {ci}"
-                level3 = f"Compound Interest Means Interest Is Added Each Year To Principal, So Next Year Interest Is On Bigger Amount. Computed Here As {ci}"
-        
-        elif subtype in ["ratio"]:
-            if len(nums) >= 3:
-                total = nums[2]
-                a, b = nums[0], nums[1]
-                smaller = (a/(a+b))*total
-                level2 = f"Ratio {a}:{b} Sum={total} → Smaller Part = {smaller}"
-                level3 = f"Total Is Split In Ratio {a}:{b}. Smaller Part = Total × (a/(a+b)) = {smaller}"
-        
-        elif subtype in ["hcf"]:
-            from math import gcd
-            if len(nums) >= 2:
-                h = int(gcd(int(nums[0]), int(nums[1])))
-                level2 = f"HCF of {int(nums[0])} and {int(nums[1])} = {h}"
-                level3 = f"HCF Means Largest Number That Divides Both Numbers Exactly. Here It's {h}"
-        
-        elif subtype in ["lcm"]:
-            from math import gcd
-            if len(nums) >= 2:
-                l = int(nums[0]*nums[1]/gcd(int(nums[0]), int(nums[1])))
-                level2 = f"LCM of {int(nums[0])} and {int(nums[1])} = {l}"
-                level3 = f"LCM Means Smallest Number Divisible By Both Numbers. Calculated As ({int(nums[0])}*{int(nums[1])})/GCD = {l}"
-        
-        elif subtype in ["root"]:
-            if nums:
-                level2 = f"√{nums[0]} = {nums[0]**0.5}"
-                level3 = f"Square Root Means Number Which When Multiplied By Itself Gives Original. √{nums[0]} = {nums[0]**0.5}"
+                exp["level2"] = f"Convert {p}% Into Decimal → {p}/100. Then Multiply With {v}. That Gives {correct}."
+                exp["level3"] = "Percentage Means A Part Out Of 100. First Convert Into Fraction, Then Multiply With The Number."
+                return exp
 
-    # ================= LOGIC QUESTIONS =================
-    elif qtype == "logic":
-        if subtype == "series":
-            level2 = f"Observe Pattern, Find Rule, Apply To Next Term = {correct}"
-            level3 = f"In Series Questions, Look At Difference Or Multiplication Pattern Between Numbers. Then Apply The Same Rule To Find The Next Term. Answer Here Is {correct}"
-        elif subtype == "odd_one":
-            level2 = f"Identify Which Option Does Not Belong = {correct}"
-            level3 = f"Look For The Word/Number That Breaks The Pattern Or Category. Answer = {correct}"
-        elif subtype == "pattern":
-            level2 = f"Observe Pattern/Formula In Numbers = {correct}"
-            level3 = f"Patterns Are Special Rules Applied Across The Sequence. Follow The Rule Step By Step To Identify Missing Term. Answer = {correct}"
-        elif subtype == "power":
-            level2 = f"Find Pattern In Powers = {correct}"
-            level3 = f"Each Number Is Raised To Certain Power To Get Next. Identify And Apply Rule. Answer = {correct}"
-        elif subtype == "factorial":
-            level2 = f"Compute Factorial Pattern = {correct}"
-            level3 = f"Factorial Of N = Multiply All Numbers From 1 To N. Follow Sequence To Get Next Term. Answer = {correct}"
+        # 🔹 Average
+        if "average" in question.lower():
+            total = sum(nums)
+            count = len(nums)
+            exp["level2"] = f"Add All Values → {total}. Divide By Total Numbers ({count}). That Gives {correct}."
+            exp["level3"] = "Average Means Equal Distribution. Add Everything And Divide Into Equal Parts."
+            return exp
 
-    # ================= VERBAL QUESTIONS =================
-    elif qtype == "verbal":
+        # 🔹 Ratio
+        if "ratio" in question.lower():
+            exp["level2"] = "Convert Ratio Into Parts, Then Distribute Total Accordingly."
+            exp["level3"] = "Ratio Splits A Quantity Into Proportions. Think Of Sharing Based On Given Parts."
+            return exp
+
+        # 🔹 Speed / Distance / Time
+        if "speed" in question.lower():
+            exp["level2"] = "Use Formula: Speed = Distance ÷ Time. Rearrange Based On What Is Asked."
+            exp["level3"] = "Speed Tells How Fast Something Moves. Divide Distance By Time."
+            return exp
+
+        # 🔹 Interest
+        if "interest" in question.lower():
+            exp["level2"] = "Simple Interest = (P × R × T) / 100. Identify Principal, Rate, And Time From Question."
+            exp["level3"] = "Interest Is Extra Money Earned Over Time. Multiply Principal, Rate, And Time."
+            return exp
+
+        # 🔹 LCM / HCF
+        if "lcm" in question.lower():
+            exp["level2"] = "Find Common Multiples Of Both Numbers And Pick The Smallest One."
+            exp["level3"] = "LCM Means Smallest Number Divisible By Both Numbers."
+            return exp
+
+        if "hcf" in question.lower():
+            exp["level2"] = "Find Common Factors And Pick The Greatest One."
+            exp["level3"] = "HCF Means Largest Number That Divides Both."
+            return exp
+
+        # 🔹 Square / Cube / Root
+        if "square root" in question.lower() or "√" in question:
+            exp["level2"] = "Find Number Which Multiplied By Itself Gives The Given Value."
+            exp["level3"] = "Square Root Is Opposite Of Squaring."
+            return exp
+
+        if "square" in question.lower():
+            exp["level2"] = f"Multiply Number By Itself → Example: {nums[0]} × {nums[0]}."
+            exp["level3"] = "Square Means Number Times Itself."
+            return exp
+
+        if "cube" in question.lower():
+            exp["level2"] = f"Multiply Number Three Times → {nums[0]} × {nums[0]} × {nums[0]}."
+            exp["level3"] = "Cube Means Multiply Number Three Times."
+            return exp
+
+        # 🔹 Profit / Loss
+        if "profit" in question.lower() or "loss" in question.lower():
+            exp["level2"] = "Profit = SP - CP. Profit% = (Profit / CP) × 100."
+            exp["level3"] = "Profit Means Gain. Loss Means Losing Money."
+            return exp
+
+        # 🔹 Time & Work
+        if "work" in question.lower():
+            exp["level2"] = "Use Work Formula: Work = Rate × Time. Combine Efficiencies."
+            exp["level3"] = "More Workers Means Less Time. Work Is Shared."
+            return exp
+
+        # 🔹 Clock
+        if "clock" in question.lower():
+            exp["level2"] = "Use Angle Formula: (Hour Hand - Minute Hand)."
+            exp["level3"] = "Clock Angles Depend On Positions Of Hands."
+            return exp
+
+        # 🔹 Modulus / Remainder
+        if "remainder" in question.lower():
+            exp["level2"] = "Divide Number And Take What Is Left."
+            exp["level3"] = "Remainder Is What Stays After Division."
+            return exp
+
+    # =========================================================
+    # 🟡 LOGIC SECTION
+    # =========================================================
+    if qtype == "logic":
+
+        if subtype in ["series", "pattern"]:
+            exp["level2"] = "Check Pattern: Addition, Multiplication, Squares, Or Alternating Pattern."
+            exp["level3"] = "Series Is Like A Puzzle Pattern. Find What Changes Between Numbers."
+            return exp
+
+        if subtype == "odd_one":
+            exp["level2"] = "Compare All Options And Find One That Does Not Follow The Same Rule."
+            exp["level3"] = "Odd One Out Means One Is Different."
+            return exp
+
+        if subtype == "coding":
+            exp["level2"] = "Assign Numeric Values To Letters And Look For Pattern."
+            exp["level3"] = "Each Letter Has A Value. Combine Them To Find Pattern."
+            return exp
+
+        if subtype == "alphabet":
+            exp["level2"] = "Check Alphabet Positions And Pattern Between Letters."
+            exp["level3"] = "Letters Follow A Sequence Like Numbers."
+            return exp
+
+    # =========================================================
+    # 🔵 VERBAL SECTION
+    # =========================================================
+    if qtype == "verbal":
+
         if subtype == "grammar":
-            level2 = f"Use Correct Grammar Rule → {correct}"
-            level3 = f"Understand Subject-Verb Agreement Or Tense. Fill The Blank Accordingly. Answer = {correct}"
-        elif subtype == "synonym":
-            level2 = f"Identify Word With Same Meaning → {correct}"
-            level3 = f"Synonym Means Words With Similar Meaning. Look For Word That Matches Sense Of Question. Answer = {correct}"
-        elif subtype == "antonym":
-            level2 = f"Identify Word With Opposite Meaning → {correct}"
-            level3 = f"Antonym Means Words With Opposite Meaning. Look For Word That Is Contrary In Sense. Answer = {correct}"
-        elif subtype == "plural":
-            level2 = f"Find Correct Plural Form → {correct}"
-            level3 = f"Plural Means More Than One. Use Standard Rules Or Exceptions To Form Plural. Answer = {correct}"
-        elif subtype == "spelling":
-            level2 = f"Correct Spelling → {correct}"
-            level3 = f"Check Standard English Spelling Rules Or Memory. Correct Spelling = {correct}"
-        elif subtype == "article":
-            level2 = f"Choose Correct Article → {correct}"
-            level3 = f"Use 'a' Before Consonant Sounds And 'an' Before Vowel Sounds. Answer = {correct}"
+            exp["level2"] = "Apply Grammar Rules Based On Subject And Tense."
+            exp["level3"] = "Grammar Is About Correct Sentence Structure."
+            return exp
 
-    # ================= DEFAULT =================
-    if not level2:
-        level2 = "Apply Logical Steps To Solve"
-    if not level3:
-        level3 = "Break Down Question, Understand Concept, Solve Step By Step"
+        if subtype == "synonym":
+            exp["level2"] = "Find Word With Same Meaning."
+            exp["level3"] = "Synonym Means Similar Meaning."
+            return exp
+
+        if subtype == "antonym":
+            exp["level2"] = "Find Word With Opposite Meaning."
+            exp["level3"] = "Antonym Means Opposite Meaning."
+            return exp
+
+        if subtype == "plural":
+            exp["level2"] = "Apply Plural Rules Or Irregular Forms."
+            exp["level3"] = "Plural Means More Than One."
+            return exp
+
+        if subtype == "spelling":
+            exp["level2"] = "Check Correct Letter Arrangement Carefully."
+            exp["level3"] = "Spelling Needs Attention To Detail."
+            return exp
+
+    # =========================================================
+    # 🟣 DI SECTION
+    # =========================================================
+    if qtype == "di":
+        exp["level2"] = "Analyze Given Data And Apply Percentage Or Ratio Logic."
+        exp["level3"] = "DI Means Understanding Data And Calculating Step By Step."
+        return exp
+
+    # =========================================================
+    # ⚪ FALLBACK (SMART DEFAULT)
+    # =========================================================
+    exp["level2"] = "Break The Question Into Parts And Apply Basic Concepts Step By Step."
+    exp["level3"] = "Think Calmly. Every Problem Has A Pattern Or Rule."
+    return exp
 
     return {
         "level1": level1,
