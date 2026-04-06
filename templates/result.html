@@ -158,6 +158,27 @@ body {
 </div>
 
 <script>
+
+// 🧠 Cache Store (Prevents Repeated AI Calls)
+let aiCache = {};
+
+// 🔥 Typing Effect
+function typeText(element, text, speed = 15) {
+    element.innerHTML = "";
+    let i = 0;
+
+    function typing() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(typing, speed);
+        }
+    }
+
+    typing();
+}
+
+// 🔥 Main Explanation Controller
 function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
@@ -185,20 +206,63 @@ function showExplanation(level, id, explanations) {
         el.innerHTML = `
             <b>Concept:</b><br>${explanations.level3}
             <br><br>
-
-            <button onclick='showExplanation(4, "${id}", ${JSON.stringify(explanations)})'>
+            <button onclick='loadAI("${id}", ${JSON.stringify(explanations)})'>
                 🤖 Explain With AI
             </button>
         `;
     }
-
-    else if (level === 4) {
-        el.innerHTML = `
-            <b>AI Explanation:</b><br>
-            ${explanations.level4 || "AI Could Not Generate Explanation".replace(/\n/g, "<br>")}
-        `;
-    }
 }
+
+// 🔥 AI Loader + Fetch
+function loadAI(id, explanations) {
+    const el = document.getElementById(id);
+
+    // ✅ If Already Cached → Use It
+    if (aiCache[id]) {
+        renderAI(el, aiCache[id]);
+        return;
+    }
+
+    // 🔄 Show Loader
+    el.innerHTML = `
+        <b>🤖 AI Is Thinking...</b><br>
+        <div style="margin-top:10px;">Please Wait...</div>
+    `;
+
+    // 🔥 Fetch From Backend
+    fetch("/ai_explain", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            question: explanations.question || "",
+            answer: explanations.level1
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const text = data.explanation || "AI Failed To Respond";
+
+        // ✅ Cache It
+        aiCache[id] = text;
+
+        renderAI(el, text);
+    })
+    .catch(() => {
+        el.innerHTML = "⚠️ AI Failed. Try Again.";
+    });
+}
+
+// 🔥 Render AI With Typing Effect
+function renderAI(el, text) {
+    el.innerHTML = "<b>🤖 AI Explanation:</b><br><div id='typing'></div>";
+
+    const typingEl = el.querySelector("#typing");
+
+    typeText(typingEl, text);
+}
+
 </script>
   
 <script>
