@@ -110,8 +110,6 @@ def get_db_connection():
 def login():
 
     # ✅ FIX: prevent logged-in users seeing login again
-    if 'username' in session:
-        return redirect('/quiz')
 
     if request.method == 'POST':
 
