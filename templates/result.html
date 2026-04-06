@@ -5,14 +5,12 @@
 <link rel="stylesheet" href="/static/style.css">
 
 <style>
-
 body {
   margin: 0;
   background: #0a0a0a;
   color: white;
 }
 
-/* CENTER LAYOUT */
 .page-wrapper {
   width: 100%;
   display: flex;
@@ -25,7 +23,6 @@ body {
   max-width: 600px;
 }
 
-/* HEADER */
 .result-header {
   text-align: center;
   margin-bottom: 25px;
@@ -37,7 +34,6 @@ body {
   color: #00ffff;
 }
 
-/* REWARD */
 .reward-box {
   margin-top: 15px;
   padding: 15px;
@@ -45,7 +41,6 @@ body {
   background: rgba(0,255,255,0.08);
 }
 
-/* WRONG BLOCK */
 .wrong {
   margin-top: 15px;
   padding: 15px;
@@ -60,47 +55,36 @@ body {
   border-radius: 6px;
 }
 
-/* BUTTONS */
+button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #00ffff;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .action-buttons {
   margin-top: 25px;
   display: flex;
   gap: 10px;
 }
 
-.action-buttons a {
-  flex: 1;
-}
-
 .action-buttons button {
   width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #00ffff, #0099ff);
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
 }
 
-/* NAV */
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
   width: 100%;
   display: flex;
   justify-content: space-around;
   background: rgba(0,0,0,0.95);
   padding: 12px 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
 }
-
-.bottom-nav a {
-  color: white;
-  font-size: 20px;
-  text-decoration: none;
-}
-
 </style>
 </head>
 
@@ -134,14 +118,20 @@ body {
 <div id="resultContent">
 {% for w in wrong %}
 <div class="wrong">
+
   <p><b>{{ w.q }}</b></p>
   <p>Correct Answer: {{ w.correct }}</p>
-  <div id="exp{{ loop.index }}" class="explanation-container"></div>
+
+  <!-- 🔥 PASS QUESTION INTO JS -->
+  <div id="exp{{ loop.index }}" class="explanation-container"
+       data-question="{{ w.q | escape }}"
+       data-answer="{{ w.correct }}">
+  </div>
+
 </div>
 {% endfor %}
 </div>
 
-<!-- ✅ BUTTONS BACK -->
 <div class="action-buttons">
   <a href="/quiz"><button>Attempt Again</button></a>
 </div>
@@ -149,7 +139,6 @@ body {
 </div>
 </div>
 
-<!-- NAV -->
 <div class="bottom-nav">
   <a href="/quiz">🧠</a>
   <a href="/profile">👤</a>
@@ -159,7 +148,7 @@ body {
 
 <script>
 
-// 🧠 Cache Store (Prevents Repeated AI Calls)
+// 🔥 Cache
 let aiCache = {};
 
 // 🔥 Typing Effect
@@ -174,11 +163,10 @@ function typeText(element, text, speed = 15) {
             setTimeout(typing, speed);
         }
     }
-
     typing();
 }
 
-// 🔥 Main Explanation Controller
+// 🔥 Main Flow
 function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
@@ -206,65 +194,64 @@ function showExplanation(level, id, explanations) {
         el.innerHTML = `
             <b>Concept:</b><br>${explanations.level3}
             <br><br>
-            <button onclick='loadAI("${id}", ${JSON.stringify(explanations)})'>
+            <button onclick='loadAI("${id}")'>
                 🤖 Explain With AI
             </button>
         `;
     }
 }
 
-// 🔥 AI Loader + Fetch
-function loadAI(id, explanations) {
+// 🔥 AI CALL FIXED
+function loadAI(id) {
     const el = document.getElementById(id);
 
-    // ✅ If Already Cached → Use It
+    const question = el.dataset.question;
+    const answer = el.dataset.answer;
+
+    if (!question) {
+        el.innerHTML = "❌ Question Missing";
+        return;
+    }
+
     if (aiCache[id]) {
         renderAI(el, aiCache[id]);
         return;
     }
 
-    // 🔄 Show Loader
-    el.innerHTML = `
-        <b>🤖 AI Is Thinking...</b><br>
-        <div style="margin-top:10px;">Please Wait...</div>
-    `;
+    el.innerHTML = "🤖 AI Is Thinking...";
 
-    // 🔥 Fetch From Backend
     fetch("/ai_explain", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            question: explanations.question || "",
-            answer: explanations.level1
+            question: question,
+            answer: answer
         })
     })
     .then(res => res.json())
     .then(data => {
-        const text = data.explanation || "AI Failed To Respond";
+        const text = data.explanation || "AI Failed";
 
-        // ✅ Cache It
         aiCache[id] = text;
 
         renderAI(el, text);
     })
     .catch(() => {
-        el.innerHTML = "⚠️ AI Failed. Try Again.";
+        el.innerHTML = "⚠️ Failed To Load AI";
     });
 }
 
-// 🔥 Render AI With Typing Effect
+// 🔥 Render
 function renderAI(el, text) {
     el.innerHTML = "<b>🤖 AI Explanation:</b><br><div id='typing'></div>";
-
     const typingEl = el.querySelector("#typing");
-
     typeText(typingEl, text);
 }
 
 </script>
-  
+
 <script>
 {% for w in wrong %}
 showExplanation(1, "exp{{ loop.index }}", {{ w.exp | tojson | safe }});
