@@ -6,19 +6,18 @@
 
 <style>
 
-/* 🔥 PAGE LAYOUT FIX */
 body {
   margin: 0;
   background: #0a0a0a;
   color: white;
 }
 
-/* 🔥 FULL WIDTH CENTER SYSTEM */
+/* CENTER LAYOUT */
 .page-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 20px 10px 80px; /* space for bottom nav */
+  padding: 20px 10px 80px;
 }
 
 .container {
@@ -26,7 +25,7 @@ body {
   max-width: 600px;
 }
 
-/* 🔥 RESULT HEADER */
+/* HEADER */
 .result-header {
   text-align: center;
   margin-bottom: 25px;
@@ -38,11 +37,7 @@ body {
   color: #00ffff;
 }
 
-.performance-tag {
-  opacity: 0.8;
-}
-
-/* 🔥 REWARD */
+/* REWARD */
 .reward-box {
   margin-top: 15px;
   padding: 15px;
@@ -50,7 +45,7 @@ body {
   background: rgba(0,255,255,0.08);
 }
 
-/* 🔥 WRONG BLOCK */
+/* WRONG BLOCK */
 .wrong {
   margin-top: 15px;
   padding: 15px;
@@ -65,7 +60,7 @@ body {
   border-radius: 6px;
 }
 
-/* 🔥 BUTTON FIX */
+/* BUTTONS */
 .action-buttons {
   margin-top: 25px;
   display: flex;
@@ -78,27 +73,32 @@ body {
 
 .action-buttons button {
   width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #00ffff, #0099ff);
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-/* 🔥 FIXED BOTTOM NAV */
+/* NAV */
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 100%;
-  max-width: 600px;
-  background: rgba(0,0,0,0.9);
   display: flex;
   justify-content: space-around;
+  background: rgba(0,0,0,0.95);
   padding: 12px 0;
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .bottom-nav a {
   color: white;
-  text-decoration: none;
   font-size: 20px;
+  text-decoration: none;
 }
 
 </style>
@@ -112,7 +112,7 @@ body {
 <div class="result-header">
   <div class="score-box">Score: {{ score }} / {{ total }}</div>
 
-  <div class="performance-tag">
+  <div>
     {% if score == total %}
       Exceptional Performance
     {% elif score >= total * 0.7 %}
@@ -141,14 +141,19 @@ body {
 {% endfor %}
 </div>
 
+<!-- ✅ BUTTONS BACK -->
+<div class="action-buttons">
+  <a href="/quiz"><button>Attempt Again</button></a>
+  <a href="/dashboard"><button>View Dashboard</button></a>
+</div>
 
 </div>
 </div>
 
-<!-- 🔥 CLEAN NAV -->
+<!-- NAV -->
 <div class="bottom-nav">
   <a href="/quiz">🧠</a>
-  <a href="/dashboard">👤</a>
+  <a href="/dashboard">📊</a>
   <a href="/leaderboard">🏆</a>
   <a href="/logout">🚪</a>
 </div>
@@ -158,11 +163,27 @@ function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
     if (level === 1) {
-        el.innerHTML = `<b>Answer:</b><br>${explanations.level1}`;
-    } else if (level === 2) {
-        el.innerHTML = `<b>Steps:</b><br>${explanations.level2}`;
-    } else {
-        el.innerHTML = `<b>Concept:</b><br>${explanations.level3}`;
+        el.innerHTML = `
+            <b>Answer:</b><br>${explanations.level1}
+            <br>
+            <button onclick='showExplanation(2, "${id}", ${JSON.stringify(explanations)})'>
+                View Steps
+            </button>
+        `;
+    }
+    else if (level === 2) {
+        el.innerHTML = `
+            <b>Steps:</b><br>${explanations.level2}
+            <br>
+            <button onclick='showExplanation(3, "${id}", ${JSON.stringify(explanations)})'>
+                View Concept
+            </button>
+        `;
+    }
+    else {
+        el.innerHTML = `
+            <b>Concept:</b><br>${explanations.level3}
+        `;
     }
 }
 </script>
