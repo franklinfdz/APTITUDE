@@ -54,47 +54,153 @@ def ai_explanation(question, correct):
 # =========================================================
 # 🧠 EXPLANATION ENGINE
 # =========================================================
-def generate_explanation(q, user_answer=None):
+import re
 
+def generate_explanation(q, user_answer=None):
     question = q.get("q", "")
     correct = q.get("answer", "")
     qtype = q.get("type", "")
     subtype = q.get("subtype", "")
 
-    nums = list(map(int, re.findall(r'\d+', question)))
+    # Extract numbers for calculation-based logic
+    nums = list(map(float, re.findall(r'\d+\.?\d*', question)))
 
     why_wrong = ""
-    if user_answer and user_answer != correct:
-        why_wrong = f"Your Answer: {user_answer}\nCorrect: {correct}\nCheck Concept"
+    if user_answer and str(user_answer).strip() != str(correct).strip():
+        why_wrong = f"Your Answer: {user_answer}\nCorrect Answer: {correct}\nCheck Concept & Steps"
 
-    # ===== QUANT =====
+    level1, level2, level3 = correct, "", ""
+
+    # ================= QUANT QUESTIONS =================
     if qtype == "quant":
+        if subtype in ["percentage"]:
+            if len(nums) >= 2:
+                p, v = nums[0], nums[1]
+                level2 = f"Percentage Formula: ({p}/100) × {v} = {(p/100)*v}"
+                level3 = f"A Percentage Means A Part Out Of 100. So {p}% Of {v} Means We Take {p} Parts Out Of Every 100 And Apply To {v}, Giving {(p/100)*v}"
+        
+        elif subtype in ["average"]:
+            if nums:
+                avg = sum(nums)/len(nums)
+                level2 = f"Average = Sum({nums}) / Count({len(nums)}) = {avg}"
+                level3 = f"To Find Average, Add All Numbers Together Then Divide By How Many Numbers There Are. Here Sum={sum(nums)}, Count={len(nums)}, So Average={avg}"
+        
+        elif subtype in ["multiplication", "arithmetic"]:
+            if len(nums) >= 2:
+                level2 = f"Multiply {nums[0]} × {nums[1]} = {nums[0]*nums[1]}"
+                level3 = f"Multiplication Means Adding {nums[0]} Together {int(nums[1])} Times. So {nums[0]} × {nums[1]} = {nums[0]*nums[1]}"
+        
+        elif subtype in ["division"]:
+            if len(nums) >= 2:
+                level2 = f"Divide {nums[0]} ÷ {nums[1]} = {nums[0]/nums[1]}"
+                level3 = f"Division Means Splitting {nums[0]} Into {nums[1]} Equal Parts. Each Part Is {nums[0]/nums[1]}"
+        
+        elif subtype in ["square"]:
+            if nums:
+                level2 = f"{nums[0]}² = {nums[0]**2}"
+                level3 = f"Square Means Multiply The Number By Itself. So {nums[0]} × {nums[0]} = {nums[0]**2}"
+        
+        elif subtype in ["cube"]:
+            if nums:
+                level2 = f"{nums[0]}³ = {nums[0]**3}"
+                level3 = f"Cube Means Multiply The Number By Itself Twice More. So {nums[0]} × {nums[0]} × {nums[0]} = {nums[0]**3}"
+        
+        elif subtype in ["subtraction"]:
+            if len(nums) >= 2:
+                level2 = f"{nums[0]} - {nums[1]} = {nums[0]-nums[1]}"
+                level3 = f"Subtraction Means Removing {nums[1]} From {nums[0]}, Resulting In {nums[0]-nums[1]}"
+        
+        elif subtype in ["interest", "simple_interest"]:
+            if len(nums) >= 3:
+                p, r, t = nums
+                si = (p*r*t)/100
+                level2 = f"SI = (Principal × Rate × Time)/100 = ({p}×{r}×{t})/100 = {si}"
+                level3 = f"Simple Interest Means Paying Extra Money Based On Principal And Time. Formula: P×R×T /100, Here It Gives {si}"
+        
+        elif subtype in ["compound_interest"]:
+            if len(nums) >= 3:
+                p, r, t = nums
+                ci = p*((1+r/100)**t -1)
+                level2 = f"CI = P*((1+R/100)^T -1) = {ci}"
+                level3 = f"Compound Interest Means Interest Is Added Each Year To Principal, So Next Year Interest Is On Bigger Amount. Computed Here As {ci}"
+        
+        elif subtype in ["ratio"]:
+            if len(nums) >= 3:
+                total = nums[2]
+                a, b = nums[0], nums[1]
+                smaller = (a/(a+b))*total
+                level2 = f"Ratio {a}:{b} Sum={total} → Smaller Part = {smaller}"
+                level3 = f"Total Is Split In Ratio {a}:{b}. Smaller Part = Total × (a/(a+b)) = {smaller}"
+        
+        elif subtype in ["hcf"]:
+            from math import gcd
+            if len(nums) >= 2:
+                h = int(gcd(int(nums[0]), int(nums[1])))
+                level2 = f"HCF of {int(nums[0])} and {int(nums[1])} = {h}"
+                level3 = f"HCF Means Largest Number That Divides Both Numbers Exactly. Here It's {h}"
+        
+        elif subtype in ["lcm"]:
+            from math import gcd
+            if len(nums) >= 2:
+                l = int(nums[0]*nums[1]/gcd(int(nums[0]), int(nums[1])))
+                level2 = f"LCM of {int(nums[0])} and {int(nums[1])} = {l}"
+                level3 = f"LCM Means Smallest Number Divisible By Both Numbers. Calculated As ({int(nums[0])}*{int(nums[1])})/GCD = {l}"
+        
+        elif subtype in ["root"]:
+            if nums:
+                level2 = f"√{nums[0]} = {nums[0]**0.5}"
+                level3 = f"Square Root Means Number Which When Multiplied By Itself Gives Original. √{nums[0]} = {nums[0]**0.5}"
 
-        if subtype == "percentage" and len(nums) >= 2:
-            p, v = nums[0], nums[1]
-            return {
-                "level1": correct,
-                "level2": f"{p}% of {v} = {(p/100)*v}",
-                "level3": "Formula: (P/100)*Value",
-                "level4": ai_explanation(question, correct),
-                "why_wrong": why_wrong
-            }
+    # ================= LOGIC QUESTIONS =================
+    elif qtype == "logic":
+        if subtype == "series":
+            level2 = f"Observe Pattern, Find Rule, Apply To Next Term = {correct}"
+            level3 = f"In Series Questions, Look At Difference Or Multiplication Pattern Between Numbers. Then Apply The Same Rule To Find The Next Term. Answer Here Is {correct}"
+        elif subtype == "odd_one":
+            level2 = f"Identify Which Option Does Not Belong = {correct}"
+            level3 = f"Look For The Word/Number That Breaks The Pattern Or Category. Answer = {correct}"
+        elif subtype == "pattern":
+            level2 = f"Observe Pattern/Formula In Numbers = {correct}"
+            level3 = f"Patterns Are Special Rules Applied Across The Sequence. Follow The Rule Step By Step To Identify Missing Term. Answer = {correct}"
+        elif subtype == "power":
+            level2 = f"Find Pattern In Powers = {correct}"
+            level3 = f"Each Number Is Raised To Certain Power To Get Next. Identify And Apply Rule. Answer = {correct}"
+        elif subtype == "factorial":
+            level2 = f"Compute Factorial Pattern = {correct}"
+            level3 = f"Factorial Of N = Multiply All Numbers From 1 To N. Follow Sequence To Get Next Term. Answer = {correct}"
 
-        if subtype == "average" and nums:
-            return {
-                "level1": correct,
-                "level2": f"Avg = {sum(nums)}/{len(nums)}",
-                "level3": "Average = Sum / Count",
-                "level4": ai_explanation(question, correct),
-                "why_wrong": why_wrong
-            }
+    # ================= VERBAL QUESTIONS =================
+    elif qtype == "verbal":
+        if subtype == "grammar":
+            level2 = f"Use Correct Grammar Rule → {correct}"
+            level3 = f"Understand Subject-Verb Agreement Or Tense. Fill The Blank Accordingly. Answer = {correct}"
+        elif subtype == "synonym":
+            level2 = f"Identify Word With Same Meaning → {correct}"
+            level3 = f"Synonym Means Words With Similar Meaning. Look For Word That Matches Sense Of Question. Answer = {correct}"
+        elif subtype == "antonym":
+            level2 = f"Identify Word With Opposite Meaning → {correct}"
+            level3 = f"Antonym Means Words With Opposite Meaning. Look For Word That Is Contrary In Sense. Answer = {correct}"
+        elif subtype == "plural":
+            level2 = f"Find Correct Plural Form → {correct}"
+            level3 = f"Plural Means More Than One. Use Standard Rules Or Exceptions To Form Plural. Answer = {correct}"
+        elif subtype == "spelling":
+            level2 = f"Correct Spelling → {correct}"
+            level3 = f"Check Standard English Spelling Rules Or Memory. Correct Spelling = {correct}"
+        elif subtype == "article":
+            level2 = f"Choose Correct Article → {correct}"
+            level3 = f"Use 'a' Before Consonant Sounds And 'an' Before Vowel Sounds. Answer = {correct}"
 
-    # ===== DEFAULT =====
+    # ================= DEFAULT =================
+    if not level2:
+        level2 = "Apply Logical Steps To Solve"
+    if not level3:
+        level3 = "Break Down Question, Understand Concept, Solve Step By Step"
+
     return {
-        "level1": correct,
-        "level2": "Apply Logic",
-        "level3": "Break Stepwise",
-        "level4": ai_explanation(question, correct),
+        "level1": level1,
+        "level2": level2,
+        "level3": level3,
+        "level4": f"AI Explanation Placeholder For Button → Detailed Stepwise Explanation For Question: {question}",
         "why_wrong": why_wrong
     }
 
