@@ -18,7 +18,7 @@ def ai_explanation(question, correct):
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        return "AI Not Configured Properly"
+        return "AI Is Not Configured"
 
     try:
         res = requests.post(
@@ -47,14 +47,14 @@ def ai_explanation(question, correct):
         if res.status_code == 200:
             return res.json()["choices"][0]["message"]["content"]
 
-        return "AI Failed"
+        return "AI Is Currently Unavailable"
 
     except Exception:
-        return "AI Error"
+        return "AI Is Currently Unavailable"
 
 
 # =========================================================
-# 🧠 EXPLANATION ENGINE (FIXED)
+# 🧠 EXPLANATION ENGINE
 # =========================================================
 def generate_explanation(q, user_answer=None):
 
@@ -62,7 +62,7 @@ def generate_explanation(q, user_answer=None):
     correct = str(q.get("answer", ""))
 
     exp = {
-        "question": question,   # ✅ FIX ADDED
+        "question": question,
         "level1": correct,
         "level2": "Solve Step By Step Using Basic Logic.",
         "level3": "Understand The Core Concept Behind The Question."
@@ -93,6 +93,9 @@ def get_db_connection():
 
     db_url = os.environ.get("DATABASE_URL")
 
+    if not db_url:
+        raise Exception("DATABASE_URL Not Set")
+
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
@@ -103,9 +106,50 @@ def get_db_connection():
 # 🌐 ROUTES
 # =========================================================
 
-@app.route('/')
-def home():
-    return redirect('/quiz')
+@app.route('/', methods=['GET', 'POST'])
+def login():
+
+    # ✅ FIX: prevent logged-in users seeing login again
+    if 'username' in session:
+        return redirect('/quiz')
+
+    if request.method == 'POST':
+
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        user = cur.fetchone()
+
+        if user:
+            if check_password_hash(user[2], password):
+                session['username'] = username
+                cur.close()
+                conn.close()
+                return redirect('/quiz')
+            else:
+                cur.close()
+                conn.close()
+                return render_template("login.html", error="Wrong Password")
+
+        else:
+            hashed = generate_password_hash(password)
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s,%s)",
+                (username, hashed)
+            )
+            conn.commit()
+            session['username'] = username
+
+            cur.close()
+            conn.close()
+
+            return redirect('/quiz')
+
+    return render_template("login.html")
 
 
 @app.route('/quiz')
@@ -120,6 +164,9 @@ def quiz():
     cur.execute("SELECT xp FROM users WHERE username=%s", (session['username'],))
     xp = cur.fetchone()[0]
 
+    cur.close()
+    conn.close()
+
     questions = random.sample(all_questions, 10)
     session['questions'] = questions
 
@@ -127,7 +174,7 @@ def quiz():
 
 
 # =========================================================
-# ✅ SUBMIT (LEVEL FIX INCLUDED)
+# ✅ SUBMIT
 # =========================================================
 @app.route('/submit', methods=['POST'])
 def submit():
@@ -164,7 +211,6 @@ def submit():
 
     new_xp = current_xp + xp_earned
 
-    # ✅ LEVEL LOGIC
     old_rank = get_rank(current_xp)
     new_rank = get_rank(new_xp)
     level_up = old_rank != new_rank
@@ -181,7 +227,6 @@ def submit():
     cur.close()
     conn.close()
 
-    # ✅ STORE TEMP FLAG
     session['level_up'] = level_up
 
     return render_template(
@@ -197,7 +242,7 @@ def submit():
 
 
 # =========================================================
-# ✅ PROFILE (FIXED POPUP + BUG)
+# ✅ PROFILE
 # =========================================================
 @app.route('/profile')
 def dashboard():
@@ -227,7 +272,6 @@ def dashboard():
     cur.close()
     conn.close()
 
-    # ✅ GET + CLEAR LEVEL FLAG (VERY IMPORTANT)
     level_up = session.pop('level_up', False)
 
     return render_template(
@@ -245,7 +289,39 @@ def dashboard():
 
 
 # =========================================================
-# AI ROUTE
+# 🏆 LEADERBOARD
+# =========================================================
+@app.route('/leaderboard')
+def leaderboard():
+
+    if 'username' not in session:
+        return redirect('/')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT username, xp, total_attempts
+        FROM users
+        ORDER BY xp DESC
+        LIMIT 10
+    """)
+
+    users = cur.fetchall()
+
+    data = []
+    for u in users:
+        rank = get_rank(u[1])
+        data.append((u[0], u[1], u[2], rank))
+
+    cur.close()
+    conn.close()
+
+    return render_template("leaderboard.html", data=data)
+
+
+# =========================================================
+# 🤖 AI ROUTE
 # =========================================================
 @app.route("/ai_explain", methods=["POST"])
 def ai_explain():
