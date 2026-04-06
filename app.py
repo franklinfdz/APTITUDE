@@ -504,10 +504,7 @@ def leaderboard():
     cur.close()
     conn.close()
 
-    return render_template("result.html",
-    level_up=level_up,
-    rank=new_rank
-    )
+    return render_template("result.html", data=data)
 
 @app.route('/logout')
 def logout():
