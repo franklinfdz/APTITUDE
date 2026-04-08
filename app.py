@@ -265,7 +265,6 @@ def get_progress(xp):
 
     return 100
 
-
 # =========================================================
 # 🗄️ DB
 # =========================================================
@@ -280,6 +279,40 @@ def get_db_connection():
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     return psycopg.connect(db_url, sslmode="require")
+
+
+
+def initialize_database():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE,
+        password TEXT,
+        total_score INTEGER DEFAULT 0,
+        total_attempts INTEGER DEFAULT 0,
+        xp INTEGER DEFAULT 0
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS user_scores (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        score INTEGER,
+        total INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# RUN ON STARTUP
+initialize_database()
 
 
 # =========================================================
@@ -432,7 +465,7 @@ def dashboard():
 
 
     if 'username' not in session:
-    return redirect('/')
+        return redirect('/')
     username = session['username']
 
     conn = get_db_connection()
@@ -489,7 +522,7 @@ def dashboard():
     score=score,
     scores=scores,
     percentages=percentages,
-    totals=[attempts],
+    totals=totals,
     level_up=level_up
 )
 
@@ -544,40 +577,6 @@ def ai_explain():
 
     return jsonify({"explanation": explanation})
 
-
-@app.route('/init_db')
-def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # USERS TABLE
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE,
-        password TEXT,
-        total_score INTEGER DEFAULT 0,
-        total_attempts INTEGER DEFAULT 0,
-        xp INTEGER DEFAULT 0
-    );
-    """)
-
-    # SCORES TABLE
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS user_scores (
-        id SERIAL PRIMARY KEY,
-        username TEXT,
-        score INTEGER,
-        total INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return "Database Initialized Successfully"
 
 
 @app.route('/logout')
