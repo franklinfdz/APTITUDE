@@ -461,17 +461,14 @@ def dashboard():
 
     scores_data = cur.fetchall()
     scores = [round((s[0] / 10) * 100) for s in scores_data]
+    totals = [s[1] for s in scores_data]
+
+    percentages = [
+        round((s/t)*100) if t > 0 else 0
+        for s, t in zip(scores, totals)
+    ]
     scores.reverse()
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    ALTER TABLE user_scores
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-    """)
-
-    conn.commit()
+    percentages.reverse()
 
     cur.close()
     conn.close()
