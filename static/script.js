@@ -9,12 +9,16 @@ let interval = setInterval(() => {
     let minutes = Math.floor(t / 60);
     let seconds = t % 60;
 
-    document.getElementById("timer").innerText =
-        `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    const timerEl = document.getElementById("timer");
 
-    if (t <= 10) {
-        document.getElementById("timer").style.color = "red";
-    }
+    if (timerEl) {
+        timerEl.innerText =
+            `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (t <= 10) {
+            timerEl.style.color = "red";
+        }
+}
 
     if (t <= 0) {
         clearInterval(interval);
