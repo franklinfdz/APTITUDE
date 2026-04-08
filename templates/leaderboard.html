@@ -37,8 +37,11 @@ h1 {
   backdrop-filter: blur(12px);
 
   box-shadow: 0 0 10px rgba(0,255,255,0.1);
-
   transition: all 0.25s ease;
+  min-width:0;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.5s ease forwards;
 }
 
 /* 🔥 HOVER EFFECT */
@@ -54,11 +57,6 @@ h1 {
   width: 45px;
 }
 
-/* TOP COLORS */
-.top1 { color: gold; }
-.top2 { color: silver; }
-.top3 { color: #cd7f32; }
-
 /* 🔥 USER INFO */
 .user-info {
   flex: 1;
@@ -69,28 +67,10 @@ h1 {
   font-size: 1.1rem;
 }
 
-/* 🔥 BADGE */
-.rank-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: #00ffff;
-  color: #000;
-  font-weight: bold;
-  margin-top: 4px;
-}
-
 /* 🔥 STATS */
 .user-stats {
   text-align: right;
   font-size: 0.9rem;
-}
-
-/* 🔥 ENTRY ANIMATION */
-.leader-card {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeIn 0.5s ease forwards;
 }
 
 .leader-card:nth-child(1) { animation-delay: 0.05s; }
@@ -133,13 +113,7 @@ body {
   padding: 20px 10px 80px;
 }
 
-@media (max-width: 600px) {
-
-  .leader-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+@media (max-width: 600px)
 
   .rank-number {
     font-size: 1.2rem;
@@ -156,18 +130,80 @@ body {
 
 }
 
-  table {
-    font-size: 0.8rem;
-  }
-  }
+* {
+  box-sizing: border-box;
+}
 
-  th, td {
-    padding: 8px;
+/* ================= RANK BADGE UPGRADE ================= */
+
+.rank-badge {
+  position: relative;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  display: inline-block;
+  animation: badgePop 0.4s ease;
+}
+
+/* Tier Colors */
+.rank-bronze {
+  background: linear-gradient(45deg, #cd7f32, #a97142);
+  color: #000;
+}
+
+.rank-silver {
+  background: linear-gradient(45deg, #c0c0c0, #e0e0e0);
+  color: #000;
+}
+
+.rank-gold {
+  background: linear-gradient(45deg, #ffd700, #ffea70);
+  color: #000;
+}
+
+.rank-platinum {
+  background: linear-gradient(45deg, #00ffff, #00c6ff);
+  color: #000;
+}
+
+.rank-diamond {
+  background: linear-gradient(45deg, #00bfff, #66e0ff);
+  color: #000;
+}
+
+.rank-master {
+  background: linear-gradient(45deg, #ff00ff, #ff66ff);
+  color: #000;
+}
+
+.rank-legend {
+  background: linear-gradient(45deg, #ff4500, #ff8c00);
+  color: #000;
+  box-shadow: 0 0 10px rgba(255,140,0,0.7);
+}
+
+/* Badge Animation */
+@keyframes badgePop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-* {
-  box-sizing: border-box;
+/* 🔥 TOP 3 SPECIAL GLOW */
+.top1 {
+  text-shadow: 0 0 8px gold;
+}
+.top2 {
+  text-shadow: 0 0 6px silver;
+}
+.top3 {
+  text-shadow: 0 0 6px #cd7f32;
 }
   
 </style>
@@ -201,7 +237,18 @@ body {
         <!-- Info -->
         <div class="user-info">
           <b>{{ user[0] }}</b><br>
-          <span class="rank-badge">{{ user[3] }}</span>
+          <span class="rank-badge 
+  {% if 'Bronze' in user[3] %}rank-bronze
+  {% elif 'Silver' in user[3] %}rank-silver
+  {% elif 'Gold' in user[3] %}rank-gold
+  {% elif 'Platinum' in user[3] %}rank-platinum
+  {% elif 'Diamond' in user[3] %}rank-diamond
+  {% elif 'Master' in user[3] %}rank-master
+  {% elif 'Legend' in user[3] %}rank-legend
+  {% endif %}
+">
+  {{ user[3] }}
+</span>
         </div>
 
         <!-- Stats -->
@@ -244,9 +291,6 @@ document.addEventListener("mousemove", (e) => {
 const canvas = document.getElementById("particles");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
 let particles = [];
 
 for (let i = 0; i < 80; i++) {
@@ -258,6 +302,12 @@ for (let i = 0; i < 80; i++) {
     dy: (Math.random() - 0.5) * 0.5
   });
 }
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
