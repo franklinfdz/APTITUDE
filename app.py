@@ -248,11 +248,22 @@ def get_xp(diff):
 
 
 def get_rank(xp):
-    if xp >= 1000: return "Elite"
-    if xp >= 600: return "Expert"
-    if xp >= 300: return "Advanced"
-    if xp >= 100: return "Intermediate"
-    return "Beginner"
+    if xp >= 2000: return "Legend"
+    if xp >= 1500: return "Master"
+    if xp >= 1000: return "Diamond"
+    if xp >= 700: return "Platinum"
+    if xp >= 400: return "Gold"
+    if xp >= 200: return "Silver"
+    return "Bronze"
+
+def get_progress(xp):
+    levels = [0, 200, 400, 700, 1000, 1500, 2000]
+
+    for i in range(len(levels) - 1):
+        if levels[i] <= xp < levels[i+1]:
+            return int(((xp - levels[i]) / (levels[i+1] - levels[i])) * 100)
+
+    return 100
 
 
 # =========================================================
@@ -390,6 +401,11 @@ def submit():
         WHERE username = %s
     """, (score, len(questions), new_xp, username))
 
+    cur.execute("""
+    INSERT INTO user_scores (username, score, total)
+    VALUES (%s, %s, %s)
+    """, (username, score, len(questions)))
+
     conn.commit()
     cur.close()
     conn.close()
@@ -435,23 +451,46 @@ def dashboard():
 
     accuracy = round((score / attempts) * 100, 2) if attempts > 0 else 0
 
+    # 🔥 FETCH LAST 10 SCORES
+    cur.execute("""
+    SELECT score FROM user_scores
+    WHERE username = %s
+    ORDER BY created_at DESC
+    LIMIT 10
+    """, (username,))
+
+    scores_data = cur.fetchall()
+    scores = [round((s[0] / 10) * 100) for s in scores_data]
+    scores.reverse()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    ALTER TABLE user_scores
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    """)
+
+    conn.commit()
+
     cur.close()
     conn.close()
 
     level_up = session.pop('level_up', False)
 
     return render_template(
-        'profile.html',
-        username=username,
-        xp=xp,
-        rank=get_rank(xp),
-        accuracy=accuracy,
-        attempts=attempts,
-        score=score,
-        scores=[score],
-        totals=[attempts],
-        level_up=level_up
-    )
+    'profile.html',
+    username=username,
+    xp=xp,
+    rank=get_rank(xp),
+    progress=get_progress(xp),  # ✅ NEW
+    accuracy=accuracy,
+    attempts=attempts,
+    score=score,
+    scores=scores,
+    totals=[attempts],
+    level_up=level_up
+)
 
 
 # =========================================================
