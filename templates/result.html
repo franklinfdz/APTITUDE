@@ -203,9 +203,21 @@ button {
   <p><b>{{ w.q }}</b></p>
   <p>Correct Answer: {{ w.correct }}</p>
 
-  <div id="exp{{ loop.index }}" class="explanation-container"
-       data-question="{{ w.q | escape }}"
-       data-answer="{{ w.correct }}">
+  <div class="explanation-container">
+
+    <!-- STATIC EXPLANATION -->
+    <p>{{ w.exp.level2 }}</p>
+    <p>{{ w.exp.level3 }}</p>
+
+    <!-- BUTTON -->
+    <button onclick="loadAI(this)">Get AI Explanation</button>
+
+    <!-- AI OUTPUT -->
+    <div class="ai-output"
+         data-question="{{ w.q | escape }}"
+         data-answer="{{ w.correct }}">
+    </div>
+
   </div>
 
 </div>
@@ -229,6 +241,35 @@ button {
 <script>
 // 🔥 XP BAR FILL
 document.getElementById("xpFill").style.width = "{{ (new_xp % 200) }}%";
+</script>
+
+<script>
+function loadAI(btn) {
+
+    const box = btn.nextElementSibling;
+    const question = box.getAttribute("data-question");
+    const answer = box.getAttribute("data-answer");
+
+    box.innerHTML = "Loading...";
+
+    fetch("/ai_explain", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            question: question,
+            answer: answer
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        box.innerHTML = data.explanation;
+    })
+    .catch(() => {
+        box.innerHTML = "AI Failed";
+    });
+}
 </script>
 
 <!-- KEEP YOUR EXISTING AI SCRIPT BELOW (UNCHANGED) -->
