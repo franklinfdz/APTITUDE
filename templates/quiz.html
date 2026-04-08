@@ -12,7 +12,7 @@ body{
     min-height:100vh;
 }
 
-/* 🔥 FULL WIDTH APP STYLE */
+/* CONTAINER */
 .container {
     width: 95%;
     max-width: 1200px;
@@ -20,7 +20,7 @@ body{
     padding: 15px;
 }
 
-/* 🔥 TOP BAR */
+/* TOP BAR */
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -32,8 +32,15 @@ body{
 #timer {
   font-size: 1.3rem;
   font-weight: bold;
-  color: #00cfcf; /* 🔥 DARKER CYAN */
+  color: #00cfcf;
   text-shadow: 0 0 8px rgba(0,207,207,0.6);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
 }
 
 .xp-box {
@@ -41,9 +48,9 @@ body{
   opacity: 0.8;
 }
 
-/* 🔥 QUESTION CARD */
+/* QUESTION CARD */
 .question {
-  background: rgba(0,255,255,0.04); /* 🔥 DARKER */
+  background: rgba(0,255,255,0.04);
   padding: 15px;
   margin-bottom: 20px;
   border-radius: 12px;
@@ -52,11 +59,11 @@ body{
 }
 
 .question:hover {
-  box-shadow: 0 0 20px rgba(0,200,200,0.25); /* 🔥 SOFTER GLOW */
+  box-shadow: 0 0 20px rgba(0,200,200,0.25);
   transform: translateY(-2px);
 }
 
-/* 🔥 OPTIONS */
+/* OPTIONS */
 label {
   display: block;
   padding: 10px;
@@ -66,14 +73,14 @@ label {
 }
 
 label:hover {
-  background: rgba(0,200,200,0.12); /* 🔥 DARKER CYAN HOVER */
+  background: rgba(0,200,200,0.12);
 }
 
 input[type="radio"] {
   margin-right: 10px;
 }
 
-/* 🔥 ANSWER STATES */
+/* ANSWER STATES */
 .correct {
   background: rgba(0,200,0,0.25);
 }
@@ -82,7 +89,7 @@ input[type="radio"] {
   background: rgba(255,0,0,0.25);
 }
 
-/* 🔥 EXPLANATION */
+/* EXPLANATION */
 .explanation-box {
   margin-top: 15px;
   padding: 15px;
@@ -100,30 +107,41 @@ input[type="radio"] {
   margin: 5px;
   padding: 6px 10px;
   font-size: 0.8rem;
-  background: #00cfcf; /* 🔥 MATCH THEME */
+  background: #00cfcf;
   border: none;
   border-radius: 6px;
   color: black;
   font-weight: bold;
 }
 
-/* 🔥 SUBMIT BUTTON */
+/* SUBMIT BUTTON */
 .submit-btn {
   padding: 14px 30px;
   font-size: 1rem;
   width: 100%;
   max-width: 300px;
-  background: linear-gradient(45deg,#00cfcf,#009f9f); /* 🔥 DARK CYAN GRADIENT */
+  background: linear-gradient(45deg,#00cfcf,#009f9f);
   border: none;
   border-radius: 10px;
   color: black;
   font-weight: bold;
   box-shadow: 0 0 10px rgba(0,207,207,0.4);
+  transition: 0.2s;
 }
 
-/* 🔥 MOBILE OPTIMIZATION */
-@media (max-width: 768px) {
+/* 🔥 CLICK EFFECT */
+.submit-btn:active {
+  transform: scale(0.95);
+}
 
+/* 🔥 LOADING STATE */
+.submit-btn.loading {
+  background: #008080;
+  color: #000;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
   .container {
     width: 100%;
     padding: 15px;
@@ -137,16 +155,7 @@ input[type="radio"] {
   #timer {
     margin-bottom: 5px;
   }
-
-  .question {
-    padding: 15px;
-  }
-
-  .submit-btn {
-    width: 100%;
-  }
 }
-
 </style>
 
 </head>
@@ -155,13 +164,12 @@ input[type="radio"] {
 
 <div class="container">
 
-<!-- 🔥 TOP BAR -->
 <div class="top-bar">
-  <h2 id="timer">Time: 60</h2>
+  <h2 id="timer">Time: 90</h2>
   <div class="xp-box">XP Progress Active</div>
 </div>
 
-<form action="/submit" method="post">
+<form id="quizForm" action="/submit" method="post">
 
 {% for q in questions %}
 <div class="question" data-id="{{ q.id }}">
@@ -183,9 +191,7 @@ input[type="radio"] {
   </label>
   {% endfor %}
 
-  <!-- 🔥 EXPLANATION -->
   <div class="explanation-box">
-    
     <div class="level-buttons">
       <button type="button" onclick="showLevel(this, 'level1')">Level 1</button>
       <button type="button" onclick="showLevel(this, 'level2')">Level 2</button>
@@ -198,30 +204,25 @@ input[type="radio"] {
 </div>
 {% endfor %}
 
-<!-- 🔥 SUBMIT -->
-<div class="center-buttons" style="text-align:center;">
-  <button type="submit" class="submit-btn">Submit Test</button>
+<div style="text-align:center;">
+  <button type="submit" class="submit-btn" id="submitBtn">
+    Submit Test
+  </button>
 </div>
 
 </form>
 
 </div>
 
-<!-- 🔥 BACKGROUND SYSTEM -->
-<div class="bg-shape shape1"></div>
-<div class="bg-shape shape2"></div>
-<div class="cursor-glow"></div>
 <canvas id="particles"></canvas>
 
 <script>
 
-/* 🔥 CURSOR GLOW */
-document.addEventListener("mousemove", (e) => {
-  const glow = document.querySelector(".cursor-glow");
-  if (glow) {
-    glow.style.left = e.clientX + "px";
-    glow.style.top = e.clientY + "px";
-  }
+/* 🔥 SUBMIT LOADING UX */
+document.getElementById("quizForm").addEventListener("submit", function() {
+    const btn = document.getElementById("submitBtn");
+    btn.classList.add("loading");
+    btn.innerText = "Calculating XP...";
 });
 
 /* 🔥 PARTICLES */
@@ -259,7 +260,7 @@ function animate() {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,200,200,0.5)"; /* 🔥 DARKER PARTICLES */
+    ctx.fillStyle = "rgba(0,200,200,0.5)";
     ctx.fill();
   });
 
@@ -267,7 +268,6 @@ function animate() {
 }
 
 animate();
-
 window.addEventListener("resize", resizeCanvas);
 
 </script>
