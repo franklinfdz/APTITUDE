@@ -15,8 +15,12 @@ html, body {
 }
 
 body {
-    padding-bottom: 70px; /* Match Bottom Nav */
-    overflow-y: auto;
+    padding-bottom: 70px;
+}
+
+/* 🔥 PREVENT BACKGROUND SCROLL WHEN POPUP */
+body.popup-active {
+    overflow: hidden;
 }
 
 .container {
@@ -42,13 +46,6 @@ body {
   justify-content: center;
   font-size: 2rem;
   margin: auto;
-  box-shadow: 0 0 15px rgba(0,255,255,0.4);
-}
-
-.profile-name {
-  margin-top: 10px;
-  font-size: 1.2rem;
-  font-weight: bold;
 }
 
 .stats-box {
@@ -56,12 +53,6 @@ body {
   padding: 15px;
   border-radius: 12px;
   background: rgba(255,255,255,0.05);
-  box-shadow: 0 0 10px rgba(0,255,255,0.1);
-}
-
-.xp-section {
-  margin-top: 20px;
-  text-align: center;
 }
 
 .xp-bar {
@@ -79,43 +70,37 @@ body {
     transition: width 1.5s ease-in-out;
     background: linear-gradient(90deg, #00ffcc, #00c6ff);
 }
-    
+
 .rank-badge {
   display: inline-block;
   padding: 5px 12px;
   border-radius: 20px;
   background: #00ffff;
   color: #000;
-  font-weight: bold;
 }
 
-.badge-grid:empty {
-  display: none;
-}
-
-/* POPUP */
+/* 🔥 FIXED POPUP */
 .level-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  backdrop-filter: blur(12px);
-  background: rgba(0,0,0,0.6);
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
+  background: rgba(0,0,0,0.7);
   z-index: 9999;
 }
 
 .level-popup {
   width: 90%;
   max-width: 350px;
-  padding: 30px;
-  border-radius: 20px;
+  padding: 25px;
+  border-radius: 15px;
   text-align: center;
-  background: linear-gradient(135deg, #00ffff, #0077ff);
-  color: #000;
+  background: white;
+  color: black;
 }
 
 #chart {
@@ -123,17 +108,6 @@ body {
     max-height: 300px;
 }
 
-.level-popup button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background: black;
-  color: white;
-  cursor: pointer;
-}
-
-/* NAV */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -142,15 +116,7 @@ body {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: rgba(0,0,0,0.95);
-  padding: 10px 0;
-}
-
-@media (max-width: 768px) {
-  .container {
-    width: 100%;
-    padding: 15px;
-  }
+  background: black;
 }
 </style>
 </head>
@@ -161,16 +127,16 @@ body {
 
 <div class="profile-header">
   <div class="profile-avatar">{{ username[0]|upper }}</div>
-  <div class="profile-name">{{ username }}</div>
+  <div>{{ username }}</div>
   <div class="rank-badge">{{ rank }}</div>
 </div>
 
 <div class="stats-box">
-  <p>⚡ XP: {{ xp }}</p>
-  <p>🎯 Accuracy: {{ accuracy }}%</p>
+  <p>XP: {{ xp }}</p>
+  <p>Accuracy: {{ accuracy }}%</p>
 </div>
 
-<div class="xp-section">
+<div>
   <p>Progress To Next Level</p>
   <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
 </div>
@@ -182,14 +148,10 @@ body {
 
 <canvas id="chart"></canvas>
 
-<br>
-<a href="/quiz"><button>Start Quiz</button></a>
-<a href="/leaderboard"><button>Leaderboard</button></a>
-
 </div>
 
-<!-- POPUP -->
-<div id="levelUpOverlay" class="level-overlay" style="display:none;">
+<!-- FIXED POPUP -->
+<div id="levelUpOverlay" class="level-overlay">
   <div class="level-popup">
     <h2>Level Up 🚀</h2>
     <p>You Reached {{ rank }}</p>
@@ -209,7 +171,6 @@ window.onload = function () {
 
     const scores = {{ scores | tojson if scores else "[]" }};
 
-    // Chart
     if (scores.length > 0) {
         const ctx = document.getElementById('chart').getContext('2d');
 
@@ -218,11 +179,7 @@ window.onload = function () {
             data: {
                 labels: scores.map((_, i) => "Attempt " + (i + 1)),
                 datasets: [{
-                    data: scores,
-                    borderColor: 'cyan',
-                    backgroundColor: 'rgba(0,255,255,0.2)',
-                    tension: 0.3,
-                    fill: true
+                    data: scores
                 }]
             },
             options: {
@@ -232,20 +189,18 @@ window.onload = function () {
         });
     }
 
-    // XP Animation
     const xp = {{ xp }};
-    const percent = xp % 100;
-    document.getElementById("xpFill").style.width = percent + "%";
+    document.getElementById("xpFill").style.width = (xp % 100) + "%";
 
-    // Popup Trigger
     {% if level_up %}
     document.getElementById("levelUpOverlay").style.display = "flex";
+    document.body.classList.add("popup-active");
     {% endif %}
-
 };
 
 function closeLevelPopup() {
     document.getElementById("levelUpOverlay").style.display = "none";
+    document.body.classList.remove("popup-active");
 }
 </script>
 
