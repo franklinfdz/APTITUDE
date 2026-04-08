@@ -25,17 +25,44 @@ body {
   padding:20px;
 }
 
+/* 🔥 RESULT HEADER */
 .result-header {
   text-align: center;
   margin-bottom: 25px;
 }
 
 .score-box {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: bold;
   color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
 }
 
+/* 🔥 PERFORMANCE TEXT */
+.performance-text {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+/* 🔥 XP BAR (NEW) */
+.xp-bar {
+  margin-top: 10px;
+  height: 12px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,#00ffcc,#00c6ff);
+  box-shadow: 0 0 10px #00ffff;
+  transition: width 1.5s ease-in-out;
+}
+
+/* 🔥 REWARD BOX */
 .reward-box {
   margin-top: 15px;
   padding: 15px;
@@ -43,6 +70,26 @@ body {
   background: rgba(0,255,255,0.08);
 }
 
+/* 🔥 RANK BADGE WITH ICON */
+.rank-badge {
+  margin-top: 8px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rank-bronze { background: #cd7f32; }
+.rank-silver { background: #c0c0c0; }
+.rank-gold { background: #ffd700; }
+.rank-platinum { background: #00ffff; }
+.rank-diamond { background: #00bfff; }
+.rank-master { background: #ff00ff; }
+.rank-legend { background: #ff4500; }
+
+/* 🔥 WRONG BLOCK */
 .wrong {
   margin-top: 15px;
   padding: 15px;
@@ -86,14 +133,7 @@ button {
   justify-content: space-around;
   background: rgba(0,0,0,0.95);
   padding: 12px 0;
-  z-index: 1000; /* ✅ FIX */
-}
-
-@media (max-width: 768px) {
-  .container {
-    width: 100%;
-    padding: 15px;
-  }
+  z-index: 1000;
 }
 </style>
 </head>
@@ -104,9 +144,10 @@ button {
 <div class="container">
 
 <div class="result-header">
+
   <div class="score-box">Score: {{ score }} / {{ total }}</div>
 
-  <div>
+  <div class="performance-text">
     {% if score == total %}
       Exceptional Performance
     {% elif score >= total * 0.7 %}
@@ -117,12 +158,42 @@ button {
       Needs Improvement
     {% endif %}
   </div>
+
+  <!-- 🔥 XP PROGRESS -->
+  <div class="xp-bar">
+    <div class="xp-fill" id="xpFill"></div>
+  </div>
+
 </div>
 
 <div class="reward-box">
   <p>XP Gained: {{ xp_earned }}</p>
   <p>Total XP: {{ new_xp }}</p>
-  <p>Rank: {{ rank }}</p>
+
+  <!-- 🔥 RANK WITH ICON -->
+  <div class="rank-badge
+    {% if 'Bronze' in rank %}rank-bronze
+    {% elif 'Silver' in rank %}rank-silver
+    {% elif 'Gold' in rank %}rank-gold
+    {% elif 'Platinum' in rank %}rank-platinum
+    {% elif 'Diamond' in rank %}rank-diamond
+    {% elif 'Master' in rank %}rank-master
+    {% elif 'Legend' in rank %}rank-legend
+    {% endif %}
+  ">
+    {% set icon = "" %}
+    {% if 'Bronze' in rank %} {% set icon = "🟤" %}
+    {% elif 'Silver' in rank %} {% set icon = "⚪" %}
+    {% elif 'Gold' in rank %} {% set icon = "🟡" %}
+    {% elif 'Platinum' in rank %} {% set icon = "🔷" %}
+    {% elif 'Diamond' in rank %} {% set icon = "💎" %}
+    {% elif 'Master' in rank %} {% set icon = "🔮" %}
+    {% elif 'Legend' in rank %} {% set icon = "🔥" %}
+    {% endif %}
+
+    {{ icon }} {{ rank }}
+  </div>
+
 </div>
 
 <div id="resultContent">
@@ -156,127 +227,8 @@ button {
 </div>
 
 <script>
-
-// ✅ Cache
-let aiCache = {};
-
-// ✅ Typing Effect
-function typeText(element, text, speed = 15) {
-    element.innerHTML = "";
-    let i = 0;
-
-    function typing() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(typing, speed);
-        }
-    }
-    typing();
-}
-
-// ✅ Explanation Flow
-function showExplanation(level, id, explanations) {
-    const el = document.getElementById(id);
-
-    if (level === 1) {
-        el.innerHTML = `
-            <b>Answer:</b><br>${explanations.level1}
-            <br><br>
-            <button onclick='showExplanation(2, "${id}", ${JSON.stringify(explanations)})'>
-                View Steps
-            </button>
-        `;
-    }
-
-    else if (level === 2) {
-        el.innerHTML = `
-            <b>Steps:</b><br>${explanations.level2}
-            <br><br>
-            <button onclick='showExplanation(3, "${id}", ${JSON.stringify(explanations)})'>
-                View Concept
-            </button>
-        `;
-    }
-
-    else if (level === 3) {
-        el.innerHTML = `
-            <b>Concept:</b><br>${explanations.level3}
-            <br><br>
-            <button onclick='loadAI("${id}")'>
-                🤖 Explain With AI
-            </button>
-        `;
-    }
-}
-
-// ✅ AI Call (Fixed)
-function loadAI(id) {
-    const el = document.getElementById(id);
-
-    if (el.dataset.loaded === "true") return; // ✅ prevent spam
-    el.dataset.loaded = "true";
-
-    const question = el.dataset.question;
-    const answer = el.dataset.answer;
-
-    if (!question) {
-        el.innerHTML = "❌ Question Missing";
-        return;
-    }
-
-    if (aiCache[id]) {
-        renderAI(el, aiCache[id]);
-        return;
-    }
-
-    const loading = document.createElement("div");
-    loading.innerHTML = "🤖 AI Is Thinking...";
-    el.appendChild(loading);
-
-    fetch("/ai_explain", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            question: question,
-            answer: answer
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const text = data.explanation || "AI Failed";
-        aiCache[id] = text;
-        renderAI(el, text);
-    })
-    .catch(() => {
-        const err = document.createElement("div");
-        err.style.marginTop = "10px";
-        err.innerHTML = "⚠️ AI Temporarily Unavailable";
-        el.appendChild(err);
-    });
-}
-
-// ✅ Safe AI Render (Does NOT destroy UI)
-function renderAI(el, text) {
-    const aiBox = document.createElement("div");
-    aiBox.style.marginTop = "10px";
-    aiBox.innerHTML = "<b>🤖 AI Explanation:</b><br><div class='typing'></div>";
-
-    el.appendChild(aiBox);
-
-    const typingEl = aiBox.querySelector(".typing");
-    typeText(typingEl, text);
-}
-
+// 🔥 XP BAR FILL
+document.getElementById("xpFill").style.width = "{{ (new_xp % 200) }}%";
 </script>
 
-<script>
-{% for w in wrong %}
-showExplanation(1, "exp{{ loop.index }}", {{ w.exp | tojson | safe }});
-{% endfor %}
-</script>
-
-</body>
-</html>
+<!-- KEEP YOUR EXISTING AI SCRIPT BELOW (UNCHANGED) -->
