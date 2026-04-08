@@ -86,6 +86,7 @@ button {
   justify-content: space-around;
   background: rgba(0,0,0,0.95);
   padding: 12px 0;
+  z-index: 1000; /* ✅ FIX */
 }
 
 @media (max-width: 768px) {
@@ -94,7 +95,6 @@ button {
     padding: 15px;
   }
 }
-  
 </style>
 </head>
 
@@ -132,7 +132,6 @@ button {
   <p><b>{{ w.q }}</b></p>
   <p>Correct Answer: {{ w.correct }}</p>
 
-  <!-- 🔥 PASS QUESTION INTO JS -->
   <div id="exp{{ loop.index }}" class="explanation-container"
        data-question="{{ w.q | escape }}"
        data-answer="{{ w.correct }}">
@@ -158,10 +157,10 @@ button {
 
 <script>
 
-// 🔥 Cache
+// ✅ Cache
 let aiCache = {};
 
-// 🔥 Typing Effect
+// ✅ Typing Effect
 function typeText(element, text, speed = 15) {
     element.innerHTML = "";
     let i = 0;
@@ -176,7 +175,7 @@ function typeText(element, text, speed = 15) {
     typing();
 }
 
-// 🔥 Main Flow
+// ✅ Explanation Flow
 function showExplanation(level, id, explanations) {
     const el = document.getElementById(id);
 
@@ -211,9 +210,12 @@ function showExplanation(level, id, explanations) {
     }
 }
 
-// 🔥 AI CALL FIXED
+// ✅ AI Call (Fixed)
 function loadAI(id) {
     const el = document.getElementById(id);
+
+    if (el.dataset.loaded === "true") return; // ✅ prevent spam
+    el.dataset.loaded = "true";
 
     const question = el.dataset.question;
     const answer = el.dataset.answer;
@@ -228,7 +230,9 @@ function loadAI(id) {
         return;
     }
 
-    el.innerHTML = "🤖 AI Is Thinking...";
+    const loading = document.createElement("div");
+    loading.innerHTML = "🤖 AI Is Thinking...";
+    el.appendChild(loading);
 
     fetch("/ai_explain", {
         method: "POST",
@@ -243,20 +247,26 @@ function loadAI(id) {
     .then(res => res.json())
     .then(data => {
         const text = data.explanation || "AI Failed";
-
         aiCache[id] = text;
-
         renderAI(el, text);
     })
     .catch(() => {
-        el.innerHTML = "⚠️ Failed To Load AI";
+        const err = document.createElement("div");
+        err.style.marginTop = "10px";
+        err.innerHTML = "⚠️ AI Temporarily Unavailable";
+        el.appendChild(err);
     });
 }
 
-// 🔥 Render
+// ✅ Safe AI Render (Does NOT destroy UI)
 function renderAI(el, text) {
-    el.innerHTML = "<b>🤖 AI Explanation:</b><br><div id='typing'></div>";
-    const typingEl = el.querySelector("#typing");
+    const aiBox = document.createElement("div");
+    aiBox.style.marginTop = "10px";
+    aiBox.innerHTML = "<b>🤖 AI Explanation:</b><br><div class='typing'></div>";
+
+    el.appendChild(aiBox);
+
+    const typingEl = aiBox.querySelector(".typing");
     typeText(typingEl, text);
 }
 
