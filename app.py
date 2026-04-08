@@ -485,6 +485,7 @@ def dashboard():
     attempts=attempts,
     score=score,
     scores=scores,
+    percentages=percentages,
     totals=[attempts],
     level_up=level_up
 )
