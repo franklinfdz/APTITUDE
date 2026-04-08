@@ -453,20 +453,22 @@ def dashboard():
 
     # 🔥 FETCH LAST 10 SCORES
     cur.execute("""
-    SELECT score FROM user_scores
+    SELECT score, total FROM user_scores
     WHERE username = %s
     ORDER BY created_at DESC
     LIMIT 10
     """, (username,))
 
     scores_data = cur.fetchall()
-    scores = [round((s[0] / 10) * 100) for s in scores_data]
+
+    scores = [s[0] for s in scores_data]
     totals = [s[1] for s in scores_data]
 
     percentages = [
         round((s/t)*100) if t > 0 else 0
         for s, t in zip(scores, totals)
     ]
+
     scores.reverse()
     percentages.reverse()
 
@@ -547,6 +549,19 @@ def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # USERS TABLE
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE,
+        password TEXT,
+        total_score INTEGER DEFAULT 0,
+        total_attempts INTEGER DEFAULT 0,
+        xp INTEGER DEFAULT 0
+    );
+    """)
+
+    # SCORES TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS user_scores (
         id SERIAL PRIMARY KEY,
