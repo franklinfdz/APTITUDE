@@ -562,29 +562,40 @@ def leaderboard():
 # =========================================================
 # 🤖 AI ROUTE
 # =========================================================
-# Replace your current /ai_explain route logic with this
+
+# =========================================================
+# 🤖 AI EXPLANATION ROUTE
+# =========================================================
 @app.route('/ai_explain', methods=['POST'])
 def ai_explain():
     try:
+        # ✅ Get question ID and user's answer from request
         question_id = request.form.get('question_id')
         user_answer = request.form.get('user_answer')
 
-        # Use your existing generate_explanation function instead
-        explanation = generate_explanation({
-            "q": question_id, 
-            "answer": user_answer
-        }, user_answer)
+        if not question_id:
+            return jsonify({"explanation": "Question Data Missing."})
 
-        # Fallback if explanation is empty
-        if not explanation:
-            explanation = "AI Currently Unavailable Or Could Not Generate Explanation."
+        # 🔹 Find the full question from all_questions list
+        question_data = next(
+            (q for q in all_questions if str(q.get("id")) == str(question_id)), 
+            None
+        )
 
+        if not question_data:
+            return jsonify({"explanation": "Question Not Found."})
+
+        # 🔹 Generate structured explanation using existing engine
+        explanation = generate_explanation(question_data, user_answer)
+
+        # 🔹 Return explanation as JSON
         return jsonify({"explanation": explanation})
 
     except Exception as e:
-        # Log the error in server logs
+        # Log server-side error for debugging
         app.logger.error(f"AI Explain Error: {e}")
         return jsonify({"explanation": "An Error Occurred While Generating Explanation."})
+        
 
 @app.route('/logout')
 def logout():
