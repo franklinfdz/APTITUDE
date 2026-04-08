@@ -431,7 +431,8 @@ def submit():
 def dashboard():
 
 
-
+    if 'username' not in session:
+    return redirect('/')
     username = session['username']
 
     conn = get_db_connection()
