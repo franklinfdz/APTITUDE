@@ -241,6 +241,7 @@ button:active {
 window.onload = function () {
 
     const scores = {{ scores | tojson if scores else "[]" }};
+    const percentages = {{ percentages | tojson if percentages else "[]" }};
 
     if (scores.length > 0) {
         const ctx = document.getElementById('chart').getContext('2d');
@@ -249,11 +250,27 @@ window.onload = function () {
             type: 'line',
             data: {
                 labels: scores.map((_, i) => "Attempt " + (i + 1)),
-                datasets: [{ data: scores }]
+                datasets: [
+                    {
+                        label: "Score",
+                        data: scores,
+                        tension: 0.4
+                    },
+                    {
+                        label: "Accuracy %",
+                        data: percentages,
+                        tension: 0.4
+                    }
+                ]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
             }
         });
     }
