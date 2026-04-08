@@ -562,21 +562,18 @@ def leaderboard():
 # =========================================================
 # 🤖 AI ROUTE
 # =========================================================
-@app.route("/ai_explain", methods=["POST"])
+@app.route('/ai_explain', methods=['POST'])
 def ai_explain():
-
-    data = request.get_json()
-
-    question = data.get("question", "")
-    answer = data.get("answer", "")
-
-    if not question:
-        return jsonify({"explanation": "Invalid Question Data"})
-
-    explanation = ai_explanation(question, answer)
-
-    return jsonify({"explanation": explanation})
-
+    question_id = request.form.get('question_id')
+    user_answer = request.form.get('user_answer')
+    
+    # Your AI explanation logic here
+    explanation = generate_ai_explanation(question_id, user_answer)
+    
+    if not explanation:
+        explanation = "AI Currently Unavailable Or No Explanation Generated."
+    
+    return jsonify({'explanation': explanation})
 
 
 @app.route('/logout')
