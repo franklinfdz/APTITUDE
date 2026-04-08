@@ -1,31 +1,29 @@
-// ======================================================
-// 🔥 TIMER
-// ======================================================
-let t = 90;
+const timerEl = document.getElementById("timer");
 
-let interval = setInterval(() => {
-    t--;
+if (timerEl) {
 
-    let minutes = Math.floor(t / 60);
-    let seconds = t % 60;
+    let t = 90;
 
-    const timerEl = document.getElementById("timer");
+    let interval = setInterval(() => {
+        t--;
 
-    if (timerEl) {
+        let minutes = Math.floor(t / 60);
+        let seconds = t % 60;
+
         timerEl.innerText =
             `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 
         if (t <= 10) {
             timerEl.style.color = "red";
         }
+
+        if (t <= 0) {
+            clearInterval(interval);
+            document.forms[0]?.submit();
+        }
+    }, 1000);
+
 }
-
-    if (t <= 0) {
-        clearInterval(interval);
-        document.forms[0].submit();
-    }
-}, 1000);
-
 
 // ======================================================
 // 🔥 EXPLANATION SYSTEM (FIXED + UPGRADED)
