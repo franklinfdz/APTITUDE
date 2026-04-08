@@ -165,6 +165,19 @@ button:active {
 .bottom-nav a:active {
   transform: scale(0.8);
 }
+
+.chart-container {
+    width: 100%;
+    max-width: 500px;
+    height: 250px;   /* IMPORTANT */
+    margin: auto;
+}
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 </style>
 </head>
 
@@ -217,7 +230,9 @@ button:active {
   <p>Total Score: {{ score }}</p>
 </div>
 
-<canvas id="chart"></canvas>
+<div class="chart-container">
+    <canvas id="chart"></canvas>
+</div>
 
 </div>
 
