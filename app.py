@@ -542,6 +542,28 @@ def ai_explain():
     return jsonify({"explanation": explanation})
 
 
+@app.route('/init_db')
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS user_scores (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        score INTEGER,
+        total INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return "Database Initialized Successfully"
+
+
 @app.route('/logout')
 def logout():
     session.clear()
