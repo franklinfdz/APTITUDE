@@ -10,27 +10,26 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
     overflow-x: hidden;
 }
 
+/* 🔥 APP BACKGROUND */
 body {
-    padding-bottom: 70px;
+    padding-bottom: 90px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #0a0f1c, #0d1b2a);
+    color: white;
 }
 
-/* 🔥 PREVENT BACKGROUND SCROLL WHEN POPUP */
-body.popup-active {
-    overflow: hidden;
-}
-
+/* CONTAINER */
 .container {
-    width: 100%;
     max-width: 500px;
     margin: 20px auto;
-    padding: 20px;
+    padding: 20px 15px 90px;
     box-sizing: border-box;
 }
 
+/* PROFILE */
 .profile-header {
   text-align: center;
   margin-bottom: 20px;
@@ -46,17 +45,30 @@ body.popup-active {
   justify-content: center;
   font-size: 2rem;
   margin: auto;
+  box-shadow: 0 0 20px rgba(0,255,255,0.6);
 }
 
-.stats-box {
-  margin: 15px 0;
-  padding: 15px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.05);
+/* ================= BADGE SYSTEM ================= */
+.rank-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  animation: pop 0.4s ease;
 }
 
+.rank-bronze { background: #cd7f32; }
+.rank-silver { background: #c0c0c0; }
+.rank-gold { background: #ffd700; }
+.rank-platinum { background: #00ffff; }
+.rank-diamond { background: #00bfff; }
+.rank-master { background: #ff00ff; }
+.rank-legend { background: #ff4500; box-shadow: 0 0 10px rgba(255,69,0,0.7); }
+
+/* XP BAR */
 .xp-bar {
-    width: 100%;
     height: 14px;
     background: rgba(255,255,255,0.15);
     border-radius: 20px;
@@ -66,57 +78,92 @@ body.popup-active {
 .xp-fill {
     height: 100%;
     width: 0%;
-    border-radius: 20px;
+    background: linear-gradient(90deg,#00ffcc,#00c6ff);
+    box-shadow: 0 0 12px #00ffff, 0 0 20px #00c6ff;
     transition: width 1.5s ease-in-out;
-    background: linear-gradient(90deg, #00ffcc, #00c6ff);
 }
 
-.rank-badge {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 20px;
-  background: #00ffff;
-  color: #000;
+/* STATS (GLASS EFFECT) */
+.stats-box {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
 }
 
-/* 🔥 FIXED POPUP */
+/* POPUP */
 .level-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: none;
-  justify-content: center;
-  align-items: center;
+  top:0;left:0;
+  width:100%;height:100%;
+  display:none;
+  justify-content:center;
+  align-items:center;
   background: rgba(0,0,0,0.7);
-  z-index: 9999;
 }
 
 .level-popup {
-  width: 90%;
-  max-width: 350px;
-  padding: 25px;
-  border-radius: 15px;
-  text-align: center;
-  background: white;
+  background: linear-gradient(135deg,#00ffff,#0077ff);
+  color:#000;
+  padding:25px;
+  border-radius:15px;
+  text-align:center;
+  animation: pop 0.3s ease;
+}
+
+/* BUTTON FEEL */
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 15px;
+  background: #00c6ff;
   color: black;
+  font-weight: bold;
+  transition: 0.2s;
 }
 
-#chart {
-    width: 100% !important;
-    max-height: 300px;
+button:active {
+  transform: scale(0.95);
 }
 
+@keyframes pop {
+  from { transform: scale(0.7); opacity:0; }
+  to { transform: scale(1); opacity:1; }
+}
+
+/* 🔥 FLOATING NAV (APP STYLE) */
 .bottom-nav {
   position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 70px;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 90%;
+  max-width: 400px;
+  height: 60px;
+
+  border-radius: 20px;
+
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: black;
+
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(15px);
+
+  box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+}
+
+/* NAV ICON FEEDBACK */
+.bottom-nav a {
+  font-size: 1.4rem;
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav a:active {
+  transform: scale(0.8);
 }
 </style>
 </head>
@@ -128,7 +175,29 @@ body.popup-active {
 <div class="profile-header">
   <div class="profile-avatar">{{ username[0]|upper }}</div>
   <div>{{ username }}</div>
-  <div class="rank-badge">{{ rank }}</div>
+
+  <div class="rank-badge 
+    {% if 'Bronze' in rank %}rank-bronze
+    {% elif 'Silver' in rank %}rank-silver
+    {% elif 'Gold' in rank %}rank-gold
+    {% elif 'Platinum' in rank %}rank-platinum
+    {% elif 'Diamond' in rank %}rank-diamond
+    {% elif 'Master' in rank %}rank-master
+    {% elif 'Legend' in rank %}rank-legend
+    {% endif %}
+  ">
+    {% set icon = "" %}
+    {% if 'Bronze' in rank %} {% set icon = "🟤" %}
+    {% elif 'Silver' in rank %} {% set icon = "⚪" %}
+    {% elif 'Gold' in rank %} {% set icon = "🟡" %}
+    {% elif 'Platinum' in rank %} {% set icon = "🔷" %}
+    {% elif 'Diamond' in rank %} {% set icon = "💎" %}
+    {% elif 'Master' in rank %} {% set icon = "🔮" %}
+    {% elif 'Legend' in rank %} {% set icon = "🔥" %}
+    {% endif %}
+
+    {{ icon }} {{ rank }}
+  </div>
 </div>
 
 <div class="stats-box">
@@ -138,7 +207,9 @@ body.popup-active {
 
 <div>
   <p>Progress To Next Level</p>
-  <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+  <div class="xp-bar">
+    <div class="xp-fill" id="xpFill"></div>
+  </div>
 </div>
 
 <div class="stats-box">
@@ -150,7 +221,7 @@ body.popup-active {
 
 </div>
 
-<!-- FIXED POPUP -->
+<!-- POPUP -->
 <div id="levelUpOverlay" class="level-overlay">
   <div class="level-popup">
     <h2>Level Up 🚀</h2>
@@ -178,9 +249,7 @@ window.onload = function () {
             type: 'line',
             data: {
                 labels: scores.map((_, i) => "Attempt " + (i + 1)),
-                datasets: [{
-                    data: scores
-                }]
+                datasets: [{ data: scores }]
             },
             options: {
                 responsive: true,
@@ -189,18 +258,15 @@ window.onload = function () {
         });
     }
 
-    const xp = {{ xp }};
-    document.getElementById("xpFill").style.width = (xp % 100) + "%";
+    document.getElementById("xpFill").style.width = "{{ progress }}%";
 
     {% if level_up %}
     document.getElementById("levelUpOverlay").style.display = "flex";
-    document.body.classList.add("popup-active");
     {% endif %}
 };
 
 function closeLevelPopup() {
     document.getElementById("levelUpOverlay").style.display = "none";
-    document.body.classList.remove("popup-active");
 }
 </script>
 
