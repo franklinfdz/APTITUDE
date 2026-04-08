@@ -241,7 +241,10 @@ button {
 
 <script>
 // 🔥 XP BAR FILL
-document.getElementById("xpFill").style.width = "{{ (new_xp % 200) }}%";
+const xp = document.getElementById("xpFill");
+if (xp) {
+  xp.style.width = "{{ (new_xp % 200) }}%";
+}
 </script>
 
 <script>
