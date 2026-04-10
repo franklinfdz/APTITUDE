@@ -567,29 +567,30 @@ def leaderboard():
 @app.route('/ai_explain', methods=['POST'])
 def ai_explain():
     try:
-        data = request.get_json()
+        q_index = request.form.get('q_index')  # index from frontend
+        user_answer = request.form.get('user_answer')
 
-        index = data.get("index")
-        user_answer = data.get("user_answer", "")
+        questions = session.get('questions', [])
 
-        questions = session.get("questions", [])
+        if q_index is None or not questions:
+            return jsonify({"explanation": "Question Data Not Found"})
 
-        if questions is None or index is None:
-            return jsonify({"error": "Question Data Not Found"})
+        q_index = int(q_index)
 
-        if index >= len(questions):
-            return jsonify({"error": "Invalid Question Index"})
+        if q_index < 0 or q_index >= len(questions):
+            return jsonify({"explanation": "Invalid Question Index"})
 
-        q = questions[index]
+        q = questions[q_index]
 
         explanation = generate_explanation(q, user_answer)
 
-        return jsonify(explanation)
+        return jsonify({
+            "explanation": explanation
+        })
 
     except Exception as e:
         app.logger.error(f"AI Explain Error: {e}")
-        return jsonify({"error": "Something Went Wrong"})
-
+        return jsonify({"explanation": "AI Failed To Generate Explanation"})
 
 @app.route('/logout')
 def logout():
