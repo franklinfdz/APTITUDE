@@ -198,15 +198,17 @@ button {
 
   <div class="explanation-container">
 
-    <p><b>Level 2:</b> {{ w.exp.level2 }}</p>
-    <p><b>Level 3:</b> {{ w.exp.level3 }}</p>
+    <!-- LEVEL BASED SYSTEM -->
+    <div id="exp{{ loop.index }}"></div>
 
-    <button onclick="loadAI(this)">Get AI Explanation</button>
-
-    <div class="ai-output"
-         data-question="{{ w.q | escape }}"
-         data-answer="{{ w.correct }}">
-    </div>
+    <script>
+      showExplanation(1, "exp{{ loop.index }}", {
+        level1: `{{ w.exp.level1 | escape }}`,
+        level2: `{{ w.exp.level2 | escape }}`,
+        level3: `{{ w.exp.level3 | escape }}`,
+        level4: ``
+      });
+    </script>
 
   </div>
 
