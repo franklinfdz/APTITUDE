@@ -563,39 +563,33 @@ def leaderboard():
 # 🤖 AI ROUTE
 # =========================================================
 
-# =========================================================
-# 🤖 AI EXPLANATION ROUTE
-# =========================================================
+
 @app.route('/ai_explain', methods=['POST'])
 def ai_explain():
     try:
-        # ✅ Get question ID and user's answer from request
-        question_id = request.form.get('question_id')
-        user_answer = request.form.get('user_answer')
+        data = request.get_json()
 
-        if not question_id:
-            return jsonify({"explanation": "Question Data Missing."})
+        index = data.get("index")
+        user_answer = data.get("user_answer", "")
 
-        # 🔹 Find the full question from all_questions list
-        question_data = next(
-            (q for q in all_questions if str(q.get("id")) == str(question_id)), 
-            None
-        )
+        questions = session.get("questions", [])
 
-        if not question_data:
-            return jsonify({"explanation": "Question Not Found."})
+        if questions is None or index is None:
+            return jsonify({"error": "Question Data Not Found"})
 
-        # 🔹 Generate structured explanation using existing engine
-        explanation = generate_explanation(question_data, user_answer)
+        if index >= len(questions):
+            return jsonify({"error": "Invalid Question Index"})
 
-        # 🔹 Return explanation as JSON
-        return jsonify({"explanation": explanation})
+        q = questions[index]
+
+        explanation = generate_explanation(q, user_answer)
+
+        return jsonify(explanation)
 
     except Exception as e:
-        # Log server-side error for debugging
         app.logger.error(f"AI Explain Error: {e}")
-        return jsonify({"explanation": "An Error Occurred While Generating Explanation."})
-        
+        return jsonify({"error": "Something Went Wrong"})
+
 
 @app.route('/logout')
 def logout():
