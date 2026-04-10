@@ -6,17 +6,23 @@
 <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 
 <style>
+html, body {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100vh;
   background: #0a0a0a;
   color: white;
+  font-family: Arial, sans-serif;
 }
 
 .page-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 20px 10px 80px;
+  padding: 20px 10px 90px;
 }
 
 .container {
@@ -26,6 +32,7 @@ body {
   padding:20px;
 }
 
+/* HEADER */
 .result-header {
   text-align: center;
   margin-bottom: 25px;
@@ -44,6 +51,7 @@ body {
   opacity: 0.8;
 }
 
+/* XP BAR */
 .xp-bar {
   margin-top: 10px;
   height: 12px;
@@ -60,6 +68,7 @@ body {
   transition: width 1.5s ease-in-out;
 }
 
+/* REWARD */
 .reward-box {
   margin-top: 15px;
   padding: 15px;
@@ -67,9 +76,10 @@ body {
   background: rgba(0,255,255,0.08);
 }
 
+/* RANK */
 .rank-badge {
   margin-top: 8px;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   font-weight: bold;
   display: inline-flex;
@@ -85,13 +95,20 @@ body {
 .rank-master { background: #ff00ff; }
 .rank-legend { background: #ff4500; }
 
+/* WRONG BLOCK */
 .wrong {
   margin-top: 15px;
   padding: 15px;
   border-radius: 10px;
   background: rgba(255,0,0,0.08);
+  transition: 0.3s;
 }
 
+.wrong:hover {
+  transform: translateY(-2px);
+}
+
+/* EXPLANATION */
 .explanation-container {
   margin-top: 10px;
   padding: 10px;
@@ -99,6 +116,7 @@ body {
   border-radius: 6px;
 }
 
+/* BUTTON */
 button {
   margin-top: 10px;
   padding: 8px 12px;
@@ -108,8 +126,14 @@ button {
   color: black;
   font-weight: bold;
   cursor: pointer;
+  transition: 0.2s;
 }
 
+button:hover {
+  transform: scale(1.05);
+}
+
+/* ACTION BUTTONS */
 .action-buttons {
   margin-top: 25px;
   display: flex;
@@ -120,15 +144,29 @@ button {
   width: 100%;
 }
 
+/* PREMIUM MOBILE NAV */
 .bottom-nav {
   position: fixed;
   bottom: 0;
+  left: 0;
   width: 100%;
   display: flex;
   justify-content: space-around;
-  background: rgba(0,0,0,0.95);
-  padding: 12px 0;
-  z-index: 1000;
+  align-items: center;
+  background: #000;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.bottom-nav a {
+  color: white;
+  font-size: 20px;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.bottom-nav a:hover {
+  opacity: 1;
 }
 </style>
 </head>
@@ -174,19 +212,8 @@ button {
     {% elif 'Legend' in rank %}rank-legend
     {% endif %}
   ">
-    {% set icon = "" %}
-    {% if 'Bronze' in rank %} {% set icon = "🟤" %}
-    {% elif 'Silver' in rank %} {% set icon = "⚪" %}
-    {% elif 'Gold' in rank %} {% set icon = "🟡" %}
-    {% elif 'Platinum' in rank %} {% set icon = "🔷" %}
-    {% elif 'Diamond' in rank %} {% set icon = "💎" %}
-    {% elif 'Master' in rank %} {% set icon = "🔮" %}
-    {% elif 'Legend' in rank %} {% set icon = "🔥" %}
-    {% endif %}
-
-    {{ icon }} {{ rank }}
+    {{ rank }}
   </div>
-
 </div>
 
 <div id="resultContent">
@@ -198,17 +225,16 @@ button {
 
   <div class="explanation-container">
 
-    <!-- LEVEL BASED SYSTEM -->
     <div id="exp{{ loop.index }}"></div>
 
-    <script>
-      showExplanation(1, "exp{{ loop.index }}", {
-        level1: `{{ w.exp.level1 | escape }}`,
-        level2: `{{ w.exp.level2 | escape }}`,
-        level3: `{{ w.exp.level3 | escape }}`,
-        level4: ``
-      });
-    </script>
+    <button onclick="showExplanation(1, 'exp{{ loop.index }}', {
+      level1: `{{ w.exp.level1 | escape }}`,
+      level2: `{{ w.exp.level2 | escape }}`,
+      level3: `{{ w.exp.level3 | escape }}`,
+      level4: `{{ w.exp.level4 | escape }}`
+    })">
+      Show Explanation 🧠
+    </button>
 
   </div>
 
@@ -231,47 +257,9 @@ button {
 </div>
 
 <script>
-// XP BAR FIXED
 const xp = document.getElementById("xpFill");
 if (xp) {
   xp.style.width = "{{ (new_xp % 200) / 2 }}%";
-}
-</script>
-
-<script>
-// AI FIXED (NO SPAM + SAFE)
-function loadAI(btn) {
-
-    if (btn.dataset.loading) return;
-    btn.dataset.loading = "true";
-
-    const box = btn.nextElementSibling;
-    const question = box.getAttribute("data-question");
-    const answer = box.getAttribute("data-answer");
-
-    box.innerHTML = "Loading...";
-
-    fetch("/ai_explain", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            question: question,
-            answer: answer
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        box.innerHTML = data.explanation || "No Explanation Found";
-    })
-    .catch(() => {
-        box.innerHTML = "AI Failed";
-    })
-    .finally(() => {
-        btn.disabled = true;
-        btn.innerText = "Done ✅";
-    });
 }
 </script>
 
