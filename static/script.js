@@ -42,13 +42,13 @@ function renderExplanation(id, explanations) {
 
     el.innerHTML = `
         <div id="${id}-content">
-            <p><b>🧠 Explanation 1:</b> ${explanations.level1 || "Not Available"}</p>
+            <p><b>🧠 Answer :</b> ${explanations.level1 || "Not Available"}</p>
 
-            <p><b>🧠 Explanation 2:</b><br>
+            <p><b>🧠 Brief :</b><br>
             ${(explanations.level2 || "Not Available").replace(/\n/g, "<br>")}
             </p>
 
-            <p><b>🧠 Explanation 3:</b><br>
+            <p><b>🧠 This Is The Final Mechanism: </b><br>
             ${(explanations.level3 || "Not Available").replace(/\n/g, "<br>")}
             </p>
 
