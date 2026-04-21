@@ -32,115 +32,68 @@ if (timerEl) {
 
 
 // ======================================================
-// 🧠 EXPLANATION SYSTEM (SAFE + OPTIMIZED)
+// 🧠 DIRECT EXPLANATION SYSTEM (NO LEVELS)
 // ======================================================
-function showExplanation(level, id, explanations) {
+function renderExplanation(id, explanations) {
     const el = document.getElementById(id);
+    if (!el) return;
 
-    if (!window.expStore) window.expStore = {};
-    window.expStore[id] = explanations;
+    if (el.dataset.rendered) return; // prevent duplicate render
 
-    if (!el.dataset.initialized) {
-        el.innerHTML = `
-            <div id="${id}-content"></div>
-            <div id="${id}-buttons"></div>
-        `;
-        el.dataset.initialized = "true";
-    }
+    el.innerHTML = `
+        <div id="${id}-content">
+            <p><b>🧠 Explanation 1:</b> ${explanations.level1 || "Not Available"}</p>
 
-    const content = document.getElementById(`${id}-content`);
-    const buttons = document.getElementById(`${id}-buttons`);
-
-    // Prevent Duplicate Levels
-    if (content.dataset[`level${level}`]) return;
-
-    // ================= LEVEL 1 =================
-    if (level === 1) {
-        content.innerHTML = `
-            <b>🧠 Level 1:</b> ${explanations.level1 || "Not Available"}
-        `;
-
-        buttons.innerHTML = `
-            <br>
-            <button onclick="showExplanation(2, '${id}', window.expStore['${id}'])">
-                Explain More 🔍
-            </button>
-        `;
-    }
-
-    // ================= LEVEL 2 =================
-    else if (level === 2) {
-        content.innerHTML += `
-            <br><br>
-            <b>🧠 Level 2:</b><br>
+            <p><b>🧠 Explanation 2:</b><br>
             ${(explanations.level2 || "Not Available").replace(/\n/g, "<br>")}
-        `;
+            </p>
 
-        buttons.innerHTML = `
-            <br>
-            <button onclick="showExplanation(3, '${id}', window.expStore['${id}'])">
-                Explain Thoroughly 📘
-            </button>
-        `;
-    }
-
-    // ================= LEVEL 3 =================
-    else if (level === 3) {
-        content.innerHTML += `
-            <br><br>
-            <b>🧠 Level 3:</b><br>
+            <p><b>🧠 Explanation 3:</b><br>
             ${(explanations.level3 || "Not Available").replace(/\n/g, "<br>")}
-        `;
+            </p>
 
-        buttons.innerHTML = `
-            <br>
-            <button onclick="showAI('${id}')">
-                🤖 AI Explain
+            <button onclick="showAI('${id}')" class="ai-btn">
+                🤖 Explain With AI
             </button>
-        `;
-    }
 
-    content.dataset[`level${level}`] = "true";
+            <p id="${id}-ai"></p>
+        </div>
+    `;
+
+    el.dataset.rendered = "true";
 }
 
 
 // ======================================================
-// 🤖 AI EXPLANATION (CONTROLLED + SAFE)
+// 🤖 AI EXPLANATION (CLEAN + SINGLE BUTTON)
 // ======================================================
 async function showAI(id) {
-    const content = document.getElementById(`${id}-content`);
-    const buttons = document.getElementById(`${id}-buttons`);
+    const aiBox = document.getElementById(`${id}-ai`);
 
-    if (content.dataset.aiShown || content.dataset.loading) return;
+    if (!aiBox || aiBox.dataset.loading || aiBox.dataset.done) return;
 
-    content.dataset.loading = "true";
-
-    // Loading UI
-    content.innerHTML += `
-        <br><br>
-        <b>🤖 AI Explanation:</b><br>
-        <span id="${id}-loading">Generating...</span>
-    `;
+    aiBox.dataset.loading = "true";
+    aiBox.innerHTML = "<br><b>🤖 AI Explanation:</b><br>Generating...";
 
     try {
         const res = await fetch("/ai_explain", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id })
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id: id })
         });
 
         const data = await res.json();
 
-        document.getElementById(`${id}-loading`).innerHTML =
-            data.explanation || "AI Not Available";
+        aiBox.innerHTML =
+            `<br><b>🤖 AI Explanation:</b><br>${data.explanation || "AI Not Available"}`;
 
     } catch (err) {
-        document.getElementById(`${id}-loading`).innerHTML =
-            "Error Fetching AI Explanation";
+        aiBox.innerHTML =
+            "<br><b>🤖 AI Explanation:</b><br>Error Fetching AI Explanation";
     }
 
-    content.dataset.aiShown = "true";
-    content.dataset.loading = "false";
-
-    buttons.innerHTML = "";
+    aiBox.dataset.loading = "false";
+    aiBox.dataset.done = "true";
 }
