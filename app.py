@@ -563,12 +563,13 @@ def leaderboard():
 # 🤖 AI ROUTE
 # =========================================================
 
-
 @app.route('/ai_explain', methods=['POST'])
 def ai_explain():
     try:
-        q_index = request.form.get('q_index')  # index from frontend
-        user_answer = request.form.get('user_answer')
+        data = request.get_json()  # ✅ FIX: Read JSON Instead Of form
+
+        q_index = data.get('q_index')
+        user_answer = data.get('user_answer')
 
         questions = session.get('questions', [])
 
