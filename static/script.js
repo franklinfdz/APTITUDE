@@ -32,13 +32,13 @@ if (timerEl) {
 
 
 // ======================================================
-// 🧠 DIRECT EXPLANATION SYSTEM (NO LEVELS)
+// 🧠 DIRECT EXPLANATION SYSTEM (FIXED)
 // ======================================================
-function renderExplanation(id, explanations) {
+function renderExplanation(id, explanations, index, userAnswer) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    if (el.dataset.rendered) return; // prevent duplicate render
+    if (el.dataset.rendered) return;
 
     el.innerHTML = `
         <div id="${id}-content">
@@ -48,11 +48,11 @@ function renderExplanation(id, explanations) {
             ${(explanations.level2 || "Not Available").replace(/\n/g, "<br>")}
             </p>
 
-            <p><b>🧠 This Is The Final Mechanism: </b><br>
+            <p><b>🧠 This Is The Final Mechanism:</b><br>
             ${(explanations.level3 || "Not Available").replace(/\n/g, "<br>")}
             </p>
 
-            <button onclick="showAI('${id}')" class="ai-btn">
+            <button onclick="showAI('${id}', ${index}, '${userAnswer || ""}')" class="ai-btn">
                 🤖 Explain With AI
             </button>
 
@@ -65,9 +65,9 @@ function renderExplanation(id, explanations) {
 
 
 // ======================================================
-// 🤖 AI EXPLANATION (CLEAN + SINGLE BUTTON)
+// 🤖 AI EXPLANATION (FIXED PAYLOAD)
 // ======================================================
-async function showAI(id) {
+async function showAI(id, index, userAnswer) {
     const aiBox = document.getElementById(`${id}-ai`);
 
     if (!aiBox || aiBox.dataset.loading || aiBox.dataset.done) return;
@@ -81,7 +81,10 @@ async function showAI(id) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ id: id })
+            body: JSON.stringify({
+                q_index: index,
+                user_answer: userAnswer
+            })
         });
 
         const data = await res.json();
