@@ -232,13 +232,13 @@ button:hover {
     <div id="exp{{ loop.index }}"></div>
 
     <!-- ✅ ONLY ONE BUTTON NOW -->
-    <button onclick="this.style.display='none'; showExplanation(1, 'exp{{ loop.index }}', {
+    onclick="this.style.display='none'; renderExplanation('exp{{ loop.index }}', {
       level1: `{{ w.exp.level1 | escape }}`,
       level2: `{{ w.exp.level2 | escape }}`,
       level3: `{{ w.exp.level3 | escape }}`,
       level4: `{{ w.exp.level4 | escape }}`
     })">
-      Show Explanation 🧠
+       🧠 Explain
     </button>
 
   </div>
