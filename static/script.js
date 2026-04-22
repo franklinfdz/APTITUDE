@@ -34,7 +34,8 @@ if (timerEl) {
 // ======================================================
 // 🧠 DIRECT EXPLANATION SYSTEM (FIXED)
 // ======================================================
-function renderExplanation(id, explanations, index, userAnswer) {
+ 
+function renderExplanation(id, explanations) {
     const el = document.getElementById(id);
     if (!el) return;
 
@@ -52,17 +53,14 @@ function renderExplanation(id, explanations, index, userAnswer) {
             ${(explanations.level3 || "Not Available").replace(/\n/g, "<br>")}
             </p>
 
-            <button onclick="showAI('${id}', ${index}, '${userAnswer || ""}')" class="ai-btn">
-                🤖 Explain With AI
-            </button>
-
-            <p id="${id}-ai"></p>
+            <p><b>🤖 AI Explanation:</b><br>
+            ${(explanations.level4 || "AI Not Available").replace(/\n/g, "<br>")}
+            </p>
         </div>
     `;
 
     el.dataset.rendered = "true";
 }
-
 
 // ======================================================
 // 🤖 AI EXPLANATION (FIXED PAYLOAD)
